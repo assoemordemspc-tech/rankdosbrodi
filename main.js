@@ -1,7 +1,11 @@
 import { Game } from './src/core/game.js';
 
-// Aguarda o carregamento do DOM para garantir que o canvas exista
 window.addEventListener('load', () => {
-    const game = new Game();
-    game.start();
+    try {
+        const game = new Game();
+        game.start();
+        console.log("Jogo iniciado com sucesso!");
+    } catch (error) {
+        console.error("Erro ao iniciar o jogo:", error);
+    }
 });
