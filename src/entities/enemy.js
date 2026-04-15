@@ -3,29 +3,32 @@ export class Enemy {
         this.x = x;
         this.y = y;
         this.size = 25;
-        this.velocity = 1.5; // Um pouco mais lento que o player
+        this.velocity = 1.5;
+        this.health = 3; // Vida do inimigo
+        this.flashTimer = 0; // Para o feedback visual
+    }
+
+    takeDamage(amount) {
+        this.health -= amount;
+        this.flashTimer = 10; // Fica branco por 10 frames
     }
 
     update(player) {
-        // Calcula a distância entre o inimigo e o player
         const dx = player.x - this.x;
         const dy = player.y - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // Se a distância for maior que zero, normaliza o vetor e move
         if (distance > 0) {
             this.x += (dx / distance) * this.velocity;
             this.y += (dy / distance) * this.velocity;
         }
+
+        if (this.flashTimer > 0) this.flashTimer--;
     }
 
     draw(ctx) {
-        ctx.fillStyle = '#ff0000'; // Quadrado Vermelho para os Inimigos
-        ctx.fillRect(
-            this.x - this.size / 2,
-            this.y - this.size / 2,
-            this.size,
-            this.size
-        );
+        // Se estiver sob dano, desenha branco, senão vermelho
+        ctx.fillStyle = this.flashTimer > 0 ? '#fff' : '#ff0000';
+        ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
     }
 }
