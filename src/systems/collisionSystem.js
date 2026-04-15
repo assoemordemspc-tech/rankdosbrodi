@@ -1,17 +1,19 @@
 export class CollisionSystem {
-    /**
-     * Checa colisão entre dois grupos de objetos (ex: projéteis e inimigos)
-     * @param {Array} groupA - Lista de objetos (ex: projéteis)
-     * @param {Array} groupB - Lista de objetos (ex: inimigos)
-     * @param {Function} callback - O que acontece quando colidem
-     */
     static checkCircleCollision(groupA, groupB, callback) {
+        // Percorremos de trás para frente para evitar erros de índice ao remover itens
         for (let i = groupA.length - 1; i >= 0; i--) {
             for (let j = groupB.length - 1; j >= 0; j--) {
                 const a = groupA[i];
                 const b = groupB[j];
 
-                const dist = Math.hypot(a.x - b.x, a.y - b.y);
+                // Segurança: Se algum deles já foi removido por outra colisão, pula
+                if (!a || !b) continue;
+
+                const dx = a.x - b.x;
+                const dy = a.y - b.y;
+                const dist = Math.hypot(dx, dy);
+                
+                // Usamos o raio (tamanho / 2) para uma colisão circular precisa
                 const minDist = (a.size / 2) + (b.size / 2);
 
                 if (dist < minDist) {
