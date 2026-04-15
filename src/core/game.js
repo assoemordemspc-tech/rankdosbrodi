@@ -1,5 +1,5 @@
 import { Player } from '../entities/player.js';
-import { Input } from './input.js'; 
+import { Input } from './input.js'; // Note o "./" pois estão na mesma pasta
 import { SpawnSystem } from '../systems/spawnSystem.js';
 
 export class Game {
