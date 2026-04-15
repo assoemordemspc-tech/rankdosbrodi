@@ -1,58 +1,72 @@
 import { Player } from '../entities/player.js';
-import { Input } from './input.js'; // Note o "./" pois estão na mesma pasta
+import { Input } from './input.js'; 
 import { SpawnSystem } from '../systems/spawnSystem.js';
+import { Projectile } from '../entities/projectile.js'; // Novo!
 
 export class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        
         this.resize();
-        window.addEventListener('resize', () => this.resize());
-
         this.input = new Input();
         this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
-        
-        // Inicializa o sistema de spawn
         this.spawnSystem = new SpawnSystem(this.canvas);
         
+        this.projectiles = [];
+        this.attackTimer = 0;
+        this.attackInterval = 1000; // Ataca a cada 1 segundo
         this.lastTime = 0;
     }
 
-    resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-    }
-
-    start() {
-        requestAnimationFrame((time) => this.loop(time));
-    }
-
-    loop(timeStamp) {
-        const deltaTime = timeStamp - this.lastTime;
-        this.lastTime = timeStamp;
-
-        this.update(deltaTime);
-        this.draw();
-
-        requestAnimationFrame((time) => this.loop(time));
-    }
+    // ... (mantenha o resize e start)
 
     update(dt) {
         this.player.update(this.input);
-        
-        // Atualiza o sistema de spawn passando deltaTime e o player
         this.spawnSystem.update(dt, this.player);
+
+        // --- LÓGICA DE ATAQUE AUTOMÁTICO ---
+        this.attackTimer += dt;
+        if (this.attackTimer >= this.attackInterval) {
+            this.shootClosest();
+            this.attackTimer = 0;
+        }
+
+        // Atualizar projéteis e remover os que saem da tela
+        this.projectiles.forEach((p, pIdx) => {
+            p.update();
+            
+            // Colisão Projétil vs Inimigos
+            this.spawnSystem.enemies.forEach((e, eIdx) => {
+                const dist = Math.hypot(p.x - e.x, p.y - e.y);
+                if (dist < (p.size + e.size / 2)) {
+                    e.takeDamage(1);
+                    this.projectiles.splice(pIdx, 1);
+                    if (e.health <= 0) this.spawnSystem.enemies.splice(eIdx, 1);
+                }
+            });
+        });
+    }
+
+    shootClosest() {
+        if (this.spawnSystem.enemies.length === 0) return;
+
+        // Encontra o inimigo mais próximo
+        const closest = this.spawnSystem.enemies.reduce((prev, curr) => {
+            const distPrev = Math.hypot(this.player.x - prev.x, this.player.y - prev.y);
+            const distCurr = Math.hypot(this.player.x - curr.x, this.player.y - curr.y);
+            return distCurr < distPrev ? curr : prev;
+        });
+
+        this.projectiles.push(new Projectile(this.player.x, this.player.y, closest.x, closest.y));
     }
 
     draw() {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Renderiza o player
         this.player.draw(this.ctx);
-        
-        // Renderiza os inimigos
         this.spawnSystem.draw(this.ctx);
+        this.projectiles.forEach(p => p.draw(this.ctx));
     }
+    
+    // ... loop()
 }
