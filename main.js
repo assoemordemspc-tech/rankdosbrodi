@@ -1,11 +1,11 @@
 import { Game } from './src/core/game.js';
 
 window.addEventListener('load', () => {
-    const game = new Game();
-    game.start();
-});
-        console.log("Jogo iniciado com sucesso!");
-    } catch (error) {
-        console.error("Erro ao iniciar o jogo:", error);
+    try {
+        const game = new Game();
+        game.start();
+        console.log("Jogo iniciado!");
+    } catch (e) {
+        console.error("Erro ao carregar o jogo:", e);
     }
 });
