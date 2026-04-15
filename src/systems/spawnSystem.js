@@ -1,4 +1,4 @@
-import { Enemy } from '../entities/enemy.js';
+import { Enemy } from '/src/entities/enemy.js';
 
 export class SpawnSystem {
     constructor(canvas) {
