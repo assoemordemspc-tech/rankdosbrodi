@@ -8,23 +8,23 @@ export class Game {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         
-        // Inicializa as propriedades ANTES de chamar métodos
+        // 1. Configurar propriedades básicas
         this.projectiles = [];
         this.attackTimer = 0;
-        this.attackInterval = 1000;
+        this.attackInterval = 800; // Um pouco mais rápido para testar
         this.lastTime = 0;
 
-        // Agora sim chamamos o resize
-        this.handleResize(); 
-        window.addEventListener('resize', () => this.handleResize());
+        // 2. Ajustar tamanho (usando arrow function para manter o 'this')
+        this.setupCanvas();
+        window.addEventListener('resize', () => this.setupCanvas());
 
+        // 3. Inicializar entidades
         this.input = new Input();
         this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
         this.spawnSystem = new SpawnSystem(this.canvas);
     }
 
-    // Renomeei para handleResize para evitar conflitos de nomes reservados
-    handleResize() {
+    setupCanvas() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
     }
@@ -47,7 +47,7 @@ export class Game {
         this.player.update(this.input);
         this.spawnSystem.update(dt, this.player);
 
-        // Sistema de Ataque Automático
+        // Ataque Automático
         this.attackTimer += dt;
         if (this.attackTimer >= this.attackInterval) {
             this.shootClosest();
@@ -59,34 +59,33 @@ export class Game {
             const p = this.projectiles[i];
             p.update();
 
-            // Remover se sair da tela (Otimização)
+            // Remove se sair da tela
             if (p.x < 0 || p.x > this.canvas.width || p.y < 0 || p.y > this.canvas.height) {
                 this.projectiles.splice(i, 1);
                 continue;
             }
 
             // Colisão com Inimigos
-            for (let j = this.spawnSystem.enemies.length - 1; j >= 0; j--) {
-                const e = this.spawnSystem.enemies[j];
+            const enemies = this.spawnSystem.enemies;
+            for (let j = enemies.length - 1; j >= 0; j--) {
+                const e = enemies[j];
                 const dist = Math.hypot(p.x - e.x, p.y - e.y);
 
                 if (dist < (p.size + e.size / 2)) {
-                    e.takeDamage(1); // Inimigo toma dano e pisca
-                    this.projectiles.splice(i, 1); // Projétil some
-                    
-                    if (e.health <= 0) {
-                        this.spawnSystem.enemies.splice(j, 1); // Inimigo morre
-                    }
-                    break; 
+                    e.takeDamage(1);
+                    this.projectiles.splice(i, 1);
+                    if (e.health <= 0) enemies.splice(j, 1);
+                    break;
                 }
             }
         }
     }
 
     shootClosest() {
-        if (this.spawnSystem.enemies.length === 0) return;
+        const enemies = this.spawnSystem.enemies;
+        if (enemies.length === 0) return;
 
-        const closest = this.spawnSystem.enemies.reduce((prev, curr) => {
+        const closest = enemies.reduce((prev, curr) => {
             const distPrev = Math.hypot(this.player.x - prev.x, this.player.y - prev.y);
             const distCurr = Math.hypot(this.player.x - curr.x, this.player.y - curr.y);
             return distCurr < distPrev ? curr : prev;
@@ -96,7 +95,6 @@ export class Game {
     }
 
     draw() {
-        // Limpa a tela com preto
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
