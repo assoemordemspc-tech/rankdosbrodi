@@ -1,6 +1,7 @@
 import { Player } from '../entities/player.js';
-import { Input } from './input.js'; // Ambos estão em src/core, então usamos ./
+import { Input } from './input.js'; 
 import { SpawnSystem } from '../systems/spawnSystem.js';
+
 export class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
