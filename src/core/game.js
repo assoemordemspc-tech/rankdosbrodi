@@ -1,6 +1,7 @@
 import { Player } from '../entities/player.js';
 import { Input } from './input.js'; 
 import { SpawnSystem } from '../systems/spawnSystem.js';
+import { CollisionSystem } from '../systems/collisionSystem.js'; // Importando o novo sistema
 import { Projectile } from '../entities/projectile.js';
 
 export class Game {
@@ -8,17 +9,19 @@ export class Game {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         
-        // 1. Configurar propriedades básicas
+        // Propriedades de estado do jogo
         this.projectiles = [];
         this.attackTimer = 0;
-        this.attackInterval = 800; // Um pouco mais rápido para testar
+        this.attackInterval = 800; 
         this.lastTime = 0;
 
-        // 2. Ajustar tamanho (usando arrow function para manter o 'this')
+        this.init();
+    }
+
+    init() {
         this.setupCanvas();
         window.addEventListener('resize', () => this.setupCanvas());
 
-        // 3. Inicializar entidades
         this.input = new Input();
         this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
         this.spawnSystem = new SpawnSystem(this.canvas);
@@ -44,40 +47,44 @@ export class Game {
     }
 
     update(dt) {
+        // 1. Atualizar Entidades
         this.player.update(this.input);
         this.spawnSystem.update(dt, this.player);
+        
+        // 2. Ataque Automático
+        this.handleAutoAttack(dt);
 
-        // Ataque Automático
-        this.attackTimer += dt;
-        if (this.attackTimer >= this.attackInterval) {
-            this.shootClosest();
-            this.attackTimer = 0;
-        }
-
-        // Atualizar Projéteis e Colisões
+        // 3. Atualizar Projéteis (movimento e remoção de tela)
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
             p.update();
 
-            // Remove se sair da tela
             if (p.x < 0 || p.x > this.canvas.width || p.y < 0 || p.y > this.canvas.height) {
                 this.projectiles.splice(i, 1);
-                continue;
             }
+        }
 
-            // Colisão com Inimigos
-            const enemies = this.spawnSystem.enemies;
-            for (let j = enemies.length - 1; j >= 0; j--) {
-                const e = enemies[j];
-                const dist = Math.hypot(p.x - e.x, p.y - e.y);
-
-                if (dist < (p.size + e.size / 2)) {
-                    e.takeDamage(1);
-                    this.projectiles.splice(i, 1);
-                    if (e.health <= 0) enemies.splice(j, 1);
-                    break;
+        // 4. PROCESSAR COLISÕES (Usando o sistema especializado)
+        CollisionSystem.checkCircleCollision(
+            this.projectiles, 
+            this.spawnSystem.enemies, 
+            (proj, enemy, pIdx, eIdx) => {
+                enemy.takeDamage(1);
+                this.projectiles.splice(pIdx, 1);
+                
+                if (enemy.health <= 0) {
+                    this.spawnSystem.enemies.splice(eIdx, 1);
+                    // Futuro: Aqui chamaremos o xpSystem para dropar XP
                 }
             }
+        );
+    }
+
+    handleAutoAttack(dt) {
+        this.attackTimer += dt;
+        if (this.attackTimer >= this.attackInterval) {
+            this.shootClosest();
+            this.attackTimer = 0;
         }
     }
 
