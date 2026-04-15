@@ -1,6 +1,6 @@
-import { Player } from './src/entities/player.js';
-import { Input } from './src/core/input.js';
-import { SpawnSystem } from './src/systems/spawnSystem.js';
+import { Player } from '../entities/player.js';
+import { Input } from './input.js'; // Como game.js e input.js estão na mesma pasta, usamos ./
+import { SpawnSystem } from '../systems/spawnSystem.js';
 
 export class Game {
     constructor() {
