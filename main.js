@@ -1,3 +1,4 @@
+import './src/core/teste.js';
 import { Game } from './src/core/game.js';
 
 window.addEventListener('load', () => {
