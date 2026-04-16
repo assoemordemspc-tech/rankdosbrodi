@@ -3,6 +3,8 @@ export class Input {
         this.axes = { x: 0, y: 0 }; // Direção de -1 a 1
         this.isTouch = false;
 
+        this.lastKey = null; // ✅ ADICIONADO
+
         // Teclado (PC)
         window.addEventListener('keydown', (e) => this.handleKey(e, true));
         window.addEventListener('keyup', (e) => this.handleKey(e, false));
@@ -18,6 +20,12 @@ export class Input {
 
     handleKey(e, isDown) {
         const val = isDown ? 1 : 0;
+
+        // ✅ CAPTURA DA ÚLTIMA TECLA PRESSIONADA
+        if (isDown) {
+            this.lastKey = e.key;
+        }
+
         if (e.key === 'ArrowLeft' || e.key === 'a') this.axes.x = isDown ? -1 : 0;
         if (e.key === 'ArrowRight' || e.key === 'd') this.axes.x = isDown ? 1 : 0;
         if (e.key === 'ArrowUp' || e.key === 'w') this.axes.y = isDown ? -1 : 0;
@@ -25,7 +33,6 @@ export class Input {
     }
 
     handleTouch(e) {
-        // Implementação simplificada: move para onde toca em relação ao centro
         const touch = e.touches[0];
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
