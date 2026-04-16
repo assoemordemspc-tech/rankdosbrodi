@@ -19,7 +19,7 @@ export class XPSystem {
         this.orbs = [];
     }
 
-    spawn(x, y, value = 1) {
+    spawn(x, y, value = 2) {
         this.orbs.push(new XPOrb(x, y, value));
     }
 
