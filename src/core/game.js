@@ -1,7 +1,7 @@
 import { Player } from '../entities/player.js';
 import { Input } from './input.js'; 
 import { SpawnSystem } from '../systems/spawnSystem.js';
-import { CollisionSystem } from '../systems/collisionSystem.js'; // Importando o novo sistema
+import { CollisionSystem } from '../systems/collisionSystem.js';
 import { Projectile } from '../entities/projectile.js';
 import { XPSystem } from '../systems/xpSystem.js';
 import { LevelSystem } from '../mechanics/levelSystem.js';
@@ -11,11 +11,11 @@ export class Game {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         
-        // Propriedades de estado do jogo
         this.projectiles = [];
         this.attackTimer = 0;
         this.attackInterval = 800; 
         this.lastTime = 0;
+
         this.xpSystem = new XPSystem();
         this.levelSystem = new LevelSystem();
 
@@ -51,14 +51,23 @@ export class Game {
     }
 
     update(dt) {
-        // 1. Atualizar Entidades
+        // 🔒 TRAVA O JOGO DURANTE ESCOLHA DE UPGRADE
+        if (this.levelSystem.isSelectingUpgrade) {
+            this.handleUpgradeInput();
+            return;
+        }
+
+        // Player + inimigos
         this.player.update(this.input);
         this.spawnSystem.update(dt, this.player);
-        
-        // 2. Ataque Automático
+
+        // Ataque automático
         this.handleAutoAttack(dt);
 
-        // 3. Atualizar Projéteis (movimento e remoção de tela)
+        // Sistema de XP (coleta automática)
+        this.xpSystem.update(this.player, (val) => this.levelSystem.addXP(val));
+
+        // Projéteis (mantendo remoção segura)
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
             p.update();
@@ -68,19 +77,22 @@ export class Game {
             }
         }
 
-        // 4. PROCESSAR COLISÕES (Usando o sistema especializado)
+        // Colisão
         CollisionSystem.checkCircleCollision(
-    this.projectiles, 
-    this.spawnSystem.enemies, 
-    (proj, enemy, pIdx, eIdx) => {
-        enemy.takeDamage(1);
-        
-        // Remove o projétil
-        this.projectiles.splice(pIdx, 1);
-        
-        if (enemy.health <= 0) {
-            this.spawnSystem.enemies.splice(eIdx, 1);
-                    // Futuro: Aqui chamaremos o xpSystem para dropar XP
+            this.projectiles, 
+            this.spawnSystem.enemies, 
+            (proj, enemy, pIdx, eIdx) => {
+                enemy.takeDamage(1);
+
+                // remove projétil
+                this.projectiles.splice(pIdx, 1);
+                
+                if (enemy.health <= 0) {
+                    // 💎 DROP XP
+                    this.xpSystem.spawn(enemy.x, enemy.y);
+
+                    // remove inimigo
+                    this.spawnSystem.enemies.splice(eIdx, 1);
                 }
             }
         );
@@ -107,12 +119,39 @@ export class Game {
         this.projectiles.push(new Projectile(this.player.x, this.player.y, closest.x, closest.y));
     }
 
+    handleUpgradeInput() {
+        if (this.input.lastKey === '1') this.levelSystem.applyUpgrade(0, this.player, this);
+        if (this.input.lastKey === '2') this.levelSystem.applyUpgrade(1, this.player, this);
+        if (this.input.lastKey === '3') this.levelSystem.applyUpgrade(2, this.player, this);
+
+        this.input.lastKey = null; // evita repetição
+    }
+
     draw() {
+        // Fundo
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+        // Entidades
         this.player.draw(this.ctx);
         this.spawnSystem.draw(this.ctx);
         this.projectiles.forEach(p => p.draw(this.ctx));
+
+        // XP (orbs)
+        this.xpSystem.draw(this.ctx);
+
+        // Tela de Level Up
+        if (this.levelSystem.isSelectingUpgrade) {
+            this.ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '20px Arial';
+            this.ctx.fillText(
+                "LEVEL UP! Escolha 1, 2 ou 3",
+                this.canvas.width / 2 - 140,
+                this.canvas.height / 2
+            );
+        }
     }
 }
