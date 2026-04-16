@@ -4,41 +4,28 @@ export class Enemy {
         this.y = y;
         this.type = type;
 
-        this.size = 25;
-        this.health = 2;
-        this.velocity = 0.5;
-        this.flash = 0;
+        const configs = {
+            normal: { hp: 2, speed: 1, size: 15, color: '#f00' },
+            fast:   { hp: 1, speed: 2.5, size: 10, color: '#ff0' },
+            tank:   { hp: 10, speed: 0.5, size: 25, color: '#800' }
+        };
 
-        this.baseStats();
+        const config = configs[type] || configs.normal;
+
+        this.health = config.hp;
+        this.velocity = config.speed;
+        this.size = config.size;
+        this.color = config.color;
+
+        this.flash = 0;
     }
 
-    // 🌊 WAVE CONFIG (colocado aqui como você pediu)
+    // 🌊 WAVE CONFIG (mantido do seu sistema anterior)
     static waves = [
         { time: 0, enemies: ['normal'], rate: 1000 },
         { time: 60, enemies: ['normal', 'fast'], rate: 800 },
         { time: 120, enemies: ['tank'], rate: 2000, boss: true }
     ];
-
-    baseStats() {
-        switch (this.type) {
-            case 'fast':
-                this.velocity = 1.2;
-                this.health = 1;
-                this.size = 20;
-                break;
-
-            case 'tank':
-                this.velocity = 0.4;
-                this.health = 6;
-                this.size = 35;
-                break;
-
-            default: // normal
-                this.velocity = 0.5;
-                this.health = 2;
-                this.size = 25;
-        }
-    }
 
     applyScaling(totalTime) {
         const calculatedSpeed = 0.5 + (totalTime * 0.00002);
@@ -75,7 +62,8 @@ export class Enemy {
     }
 
     draw(ctx) {
-        ctx.fillStyle = this.flash > 0 ? '#fff' : '#ff0000';
+        ctx.fillStyle = this.flash > 0 ? '#fff' : this.color;
+
         ctx.fillRect(
             this.x - this.size / 2,
             this.y - this.size / 2,
