@@ -1,3 +1,5 @@
+import { MagicWand } from '../mechanics/weapons/magicWand.js';
+
 export class Player {
     constructor(x, y) {
         this.x = x;
@@ -6,9 +8,15 @@ export class Player {
 
         this.velocity = 2.5;
 
-        // ⚔️ Combate
+        // ⚔️ Sistema de armas modular
+        this.weapons = [new MagicWand()];
+
+        // 🧲 Pickup system
+        this.magnetRadius = 150;
+
+        // ⚔️ Combate legado (mantido para compatibilidade)
         this.attackDamage = 1;
-        this.attackSpeed = 1000; // ms
+        this.attackSpeed = 1000;
         this.lastDirection = { x: 1, y: 0 };
 
         // ❤️ Vida
@@ -28,19 +36,41 @@ export class Player {
         }
     }
 
-    update(input) {
+    update(input, dt, enemies, projectiles) {
+        // ======================
+        // 🎮 MOVIMENTO
+        // ======================
         this.x += input.axes.x * this.velocity;
         this.y += input.axes.y * this.velocity;
 
-        // 🔒 Limite tela
-        this.x = Math.max(this.size / 2, Math.min(window.innerWidth - this.size / 2, this.x));
-        this.y = Math.max(this.size / 2, Math.min(window.innerHeight - this.size / 2, this.y));
+        this.x = Math.max(
+            this.size / 2,
+            Math.min(window.innerWidth - this.size / 2, this.x)
+        );
 
-        // 📌 Última direção
+        this.y = Math.max(
+            this.size / 2,
+            Math.min(window.innerHeight - this.size / 2, this.y)
+        );
+
+        // 📌 última direção
         if (input.axes.x !== 0 || input.axes.y !== 0) {
-            this.lastDirection = { x: input.axes.x, y: input.axes.y };
+            this.lastDirection = {
+                x: input.axes.x,
+                y: input.axes.y
+            };
         }
 
+        // ======================
+        // ⚔️ ARMAS (SYSTEM MODULAR)
+        // ======================
+        this.weapons.forEach(w =>
+            w.update(dt, this, enemies, projectiles)
+        );
+
+        // ======================
+        // ⏱️ iFrames
+        // ======================
         if (this.iFrames > 0) this.iFrames--;
     }
 
