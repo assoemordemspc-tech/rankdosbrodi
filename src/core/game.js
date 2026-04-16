@@ -66,14 +66,16 @@ export class Game {
 
         // 4. PROCESSAR COLISÕES (Usando o sistema especializado)
         CollisionSystem.checkCircleCollision(
-            this.projectiles, 
-            this.spawnSystem.enemies, 
-            (proj, enemy, pIdx, eIdx) => {
-                enemy.takeDamage(1);
-                this.projectiles.splice(pIdx, 1);
-                
-                if (enemy.health <= 0) {
-                    this.spawnSystem.enemies.splice(eIdx, 1);
+    this.projectiles, 
+    this.spawnSystem.enemies, 
+    (proj, enemy, pIdx, eIdx) => {
+        enemy.takeDamage(1);
+        
+        // Remove o projétil
+        this.projectiles.splice(pIdx, 1);
+        
+        if (enemy.health <= 0) {
+            this.spawnSystem.enemies.splice(eIdx, 1);
                     // Futuro: Aqui chamaremos o xpSystem para dropar XP
                 }
             }
