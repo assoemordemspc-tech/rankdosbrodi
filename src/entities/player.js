@@ -4,12 +4,13 @@ export class Player {
         this.y = y;
         this.size = 30;
 
-        // 🎮 Movimento balanceado
         this.velocity = 2.5;
 
-        // ⚔️ Dano base
+        // ⚔️ Combate
         this.attackDamage = 1;
-        
+        this.attackSpeed = 1000; // ms
+        this.lastDirection = { x: 1, y: 0 };
+
         // ❤️ Vida
         this.maxHealth = 100;
         this.health = 100;
@@ -18,12 +19,10 @@ export class Player {
 
     takeDamage(amount) {
         if (this.iFrames > 0) return;
-        
+
         this.health -= amount;
         this.iFrames = 30;
 
-        console.log(`Vida do Player: ${this.health}`);
-        
         if (this.health <= 0) {
             this.health = 0;
         }
@@ -33,11 +32,15 @@ export class Player {
         this.x += input.axes.x * this.velocity;
         this.y += input.axes.y * this.velocity;
 
-        // 🔒 Limite da tela
+        // 🔒 Limite tela
         this.x = Math.max(this.size / 2, Math.min(window.innerWidth - this.size / 2, this.x));
         this.y = Math.max(this.size / 2, Math.min(window.innerHeight - this.size / 2, this.y));
 
-        // iFrames
+        // 📌 Última direção
+        if (input.axes.x !== 0 || input.axes.y !== 0) {
+            this.lastDirection = { x: input.axes.x, y: input.axes.y };
+        }
+
         if (this.iFrames > 0) this.iFrames--;
     }
 
