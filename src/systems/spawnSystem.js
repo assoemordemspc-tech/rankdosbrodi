@@ -4,24 +4,26 @@ export class SpawnSystem {
     constructor(canvas) {
         this.canvas = canvas;
         this.enemies = [];
-        this.timer = 0; // Tempo total da partida
+        this.timer = 0;
         this.spawnTimer = 0;
+        this.maxEnemies = 5;
     }
 
     update(dt, player) {
         this.timer += dt;
         this.spawnTimer += dt;
 
-        // 📈 DIFICULDADE ESCALÁVEL
-        const currentSpawnInterval = Math.max(300, 2000 - this.timer * 0.05);
-        const maxEnemies = 5 + Math.floor(this.timer / 5000);
+        // --- EIXO 1: QUANTIDADE ---
+        this.maxEnemies = 5 + Math.floor(this.timer / 4000);
 
-        if (this.spawnTimer >= currentSpawnInterval && this.enemies.length < maxEnemies) {
+        // --- EIXO 2: FREQUÊNCIA DE SPAWN ---
+        const currentSpawnInterval = Math.max(400, 2000 - (this.timer * 0.05));
+
+        if (this.spawnTimer >= currentSpawnInterval && this.enemies.length < this.maxEnemies) {
             this.spawn();
             this.spawnTimer = 0;
         }
 
-        // Atualiza inimigos
         this.enemies.forEach(enemy => enemy.update(player, this.timer));
     }
 
@@ -39,7 +41,7 @@ export class SpawnSystem {
 
         const newEnemy = new Enemy(x, y);
 
-        // 🔥 Escala com o tempo
+        // 🔥 Scaling por tempo
         if (newEnemy.applyScaling) {
             newEnemy.applyScaling(this.timer);
         }
