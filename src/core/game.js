@@ -96,8 +96,34 @@ export class Game {
         }
     }
 
+    // --- NOVA LÓGICA DE MIRA AUTOMÁTICA ---
+    getAngleToClosestEnemy() {
+        const enemies = this.spawnSystem.enemies;
+        
+        // Se não houver inimigos, mantém a direção que o player está olhando
+        if (enemies.length === 0) {
+            return Math.atan2(this.player.lastDirection.y, this.player.lastDirection.x);
+        }
+
+        let closest = enemies[0];
+        let minDist = Math.hypot(this.player.x - closest.x, this.player.y - closest.y);
+
+        for (let i = 1; i < enemies.length; i++) {
+            const dist = Math.hypot(this.player.x - enemies[i].x, this.player.y - enemies[i].y);
+            if (dist < minDist) {
+                minDist = dist;
+                closest = enemies[i];
+            }
+        }
+
+        // Retorna o ângulo em direção ao inimigo mais próximo
+        return Math.atan2(closest.y - this.player.y, closest.x - this.player.x);
+    }
+
     fireProjectiles() {
-        const baseAngle = Math.atan2(this.player.lastDirection.y, this.player.lastDirection.x);
+        // Agora buscamos o ângulo do inimigo antes de disparar
+        const baseAngle = this.getAngleToClosestEnemy();
+        
         this.shootingAngles.forEach(angleOffset => {
             const finalAngle = baseAngle + angleOffset;
             const p = new Projectile(this.player.x, this.player.y, finalAngle);
