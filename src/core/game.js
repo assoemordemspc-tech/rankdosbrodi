@@ -51,23 +51,20 @@ export class Game {
     }
 
     update(dt) {
-        // 🔒 TRAVA O JOGO DURANTE ESCOLHA DE UPGRADE
+        // 🔒 TRAVA DURANTE UPGRADE
         if (this.levelSystem.isSelectingUpgrade) {
             this.handleUpgradeInput();
-            return;
+            return; 
         }
 
-        // Player + inimigos
         this.player.update(this.input);
         this.spawnSystem.update(dt, this.player);
 
-        // Ataque automático
         this.handleAutoAttack(dt);
 
-        // Sistema de XP (coleta automática)
         this.xpSystem.update(this.player, (val) => this.levelSystem.addXP(val));
 
-        // Projéteis (mantendo remoção segura)
+        // Projéteis (loop seguro)
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
             p.update();
@@ -77,21 +74,31 @@ export class Game {
             }
         }
 
-        // Colisão
+        // 🟥 COLISÃO INIMIGO → PLAYER
+        CollisionSystem.checkCircleCollision(
+            [this.player],
+            this.spawnSystem.enemies,
+            (player, enemy) => {
+                player.takeDamage(10);
+
+                if (player.health <= 0) {
+                    alert("Game Over! A horda venceu.");
+                    location.reload();
+                }
+            }
+        );
+
+        // 🟢 COLISÃO PROJÉTIL → INIMIGO
         CollisionSystem.checkCircleCollision(
             this.projectiles, 
             this.spawnSystem.enemies, 
             (proj, enemy, pIdx, eIdx) => {
                 enemy.takeDamage(1);
 
-                // remove projétil
                 this.projectiles.splice(pIdx, 1);
-                
-                if (enemy.health <= 0) {
-                    // 💎 DROP XP
-                    this.xpSystem.spawn(enemy.x, enemy.y);
 
-                    // remove inimigo
+                if (enemy.health <= 0) {
+                    this.xpSystem.spawn(enemy.x, enemy.y); 
                     this.spawnSystem.enemies.splice(eIdx, 1);
                 }
             }
@@ -124,7 +131,7 @@ export class Game {
         if (this.input.lastKey === '2') this.levelSystem.applyUpgrade(1, this.player, this);
         if (this.input.lastKey === '3') this.levelSystem.applyUpgrade(2, this.player, this);
 
-        this.input.lastKey = null; // evita repetição
+        this.input.lastKey = null;
     }
 
     draw() {
@@ -137,7 +144,7 @@ export class Game {
         this.spawnSystem.draw(this.ctx);
         this.projectiles.forEach(p => p.draw(this.ctx));
 
-        // XP (orbs)
+        // XP
         this.xpSystem.draw(this.ctx);
 
         // Tela de Level Up
@@ -153,5 +160,19 @@ export class Game {
                 this.canvas.height / 2
             );
         }
+
+        // ❤️ Barra de vida
+        const barWidth = 200;
+
+        this.ctx.fillStyle = "#333";
+        this.ctx.fillRect(20, 20, barWidth, 10);
+
+        this.ctx.fillStyle = "#ff0000";
+        this.ctx.fillRect(
+            20,
+            20,
+            (this.player.health / this.player.maxHealth) * barWidth,
+            10
+        );
     }
 }
