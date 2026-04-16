@@ -13,25 +13,20 @@ export class SpawnSystem {
     }
 
     update(dt, player) {
-        console.log('spawn funcionando');
-
         this.timer += dt;
-        this.spawnTimer += dt;
+    this.spawnTimer += dt;
 
-        const maxEnemies = this.baseMaxEnemies + Math.floor(this.timer / 8000);
+    console.log('spawn funcionando');
 
-        const spawnInterval = Math.max(
-            600,
-            this.baseSpawnInterval - (this.timer * 0.03)
-        );
+    // 🔥 FORÇA SPAWN A CADA 1 SEGUNDO
+    if (this.spawnTimer >= 1000) {
+        console.log('FORÇANDO SPAWN');
+        this.spawn();
+        this.spawnTimer = 0;
+    }
 
-        if (this.spawnTimer >= spawnInterval && this.enemies.length < maxEnemies) {
-            this.spawn();
-            this.spawnTimer = 0;
-        }
-
-        for (let enemy of this.enemies) {
-            enemy.update(player, this.timer);
+    for (let enemy of this.enemies) {
+        enemy.update(player, this.timer);
         }
     }
 
