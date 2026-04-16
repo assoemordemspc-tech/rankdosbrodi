@@ -56,7 +56,7 @@ export class SpawnSystem {
 
         const timeFactor = this.timer / 10000;
 
-        enemy.health = 2 + timeFactor * 1.5;
+        enemy.health = 1.5 + timeFactor * 1.5;
         enemy.speed = 0.6 + Math.min(0.5, timeFactor * 0.2);
         enemy.damage = 5 + Math.min(10, timeFactor * 2);
 
