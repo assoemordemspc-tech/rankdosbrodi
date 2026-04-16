@@ -16,8 +16,7 @@ export class Game {
         
         this.projectiles = [];
         this.attackTimer = 0;
-        this.attackInterval = 800; 
-        this.lastTime = 0;
+        this.shootingAngles = [0]; // direção base
 
         this.state = 'PLAYING';
 
