@@ -3,16 +3,26 @@ export class Projectile {
         this.x = x;
         this.y = y;
         this.size = 6;
-        this.velocity = 7;
+
+        this.speed = 7;
         this.damage = 1;
 
-        this.vx = Math.cos(angle) * this.velocity;
-        this.vy = Math.sin(angle) * this.velocity;
+        this.vx = Math.cos(angle) * this.speed;
+        this.vy = Math.sin(angle) * this.speed;
+
+        // 🔥 NOVO
+        this.lifeTime = 120; // frames (~2 segundos)
     }
 
     update() {
         this.x += this.vx;
         this.y += this.vy;
+
+        this.lifeTime--;
+    }
+
+    isDead() {
+        return this.lifeTime <= 0;
     }
 
     draw(ctx) {
