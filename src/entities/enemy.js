@@ -3,18 +3,27 @@ export class Enemy {
         this.x = x;
         this.y = y;
         this.size = 25;
-        this.baseVelocity = 1.5;
-        this.velocity = 1.5;
         this.health = 2;
+        this.velocity = 0.5;
         this.flash = 0;
     }
 
     applyScaling(totalTime) {
-        // Vida escala com o tempo
-        this.health = 2 + Math.floor(totalTime / 8000);
+        // --- EIXO 3: VELOCIDADE COM CAP ---
+        const calculatedSpeed = 0.5 + (totalTime * 0.00002);
+        this.velocity = Math.min(1.5, calculatedSpeed);
 
-        // Velocidade aumenta gradualmente
-        this.velocity = this.baseVelocity + (totalTime * 0.00005);
+        // --- EIXO 4: VIDA EM DEGRAUS ---
+        if (totalTime < 15000) {
+            this.health = 2;
+        } else if (totalTime < 30000) {
+            this.health = 3;
+        } else if (totalTime < 60000) {
+            this.health = 4;
+        } else {
+            const extraMinutes = Math.floor((totalTime - 60000) / 60000);
+            this.health = 4 + extraMinutes;
+        }
     }
 
     takeDamage(n) {
