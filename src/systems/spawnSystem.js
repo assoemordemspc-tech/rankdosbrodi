@@ -3,53 +3,106 @@ import { Enemy } from '../entities/enemy.js';
 export class SpawnSystem {
     constructor(canvas) {
         this.canvas = canvas;
+
         this.enemies = [];
+
         this.timer = 0;
         this.spawnTimer = 0;
-        this.maxEnemies = 5;
+
+        // 🔥 Estado inicial equilibrado
+        this.baseMaxEnemies = 5;
+        this.baseSpawnInterval = 2000;
     }
 
     update(dt, player) {
         this.timer += dt;
         this.spawnTimer += dt;
 
-        // --- EIXO 1: QUANTIDADE ---
-        this.maxEnemies = 5 + Math.floor(this.timer / 4000);
+        // =========================
+        // 📈 PROGRESSÃO CONTROLADA
+        // =========================
 
-        // --- EIXO 2: FREQUÊNCIA DE SPAWN ---
-        const currentSpawnInterval = Math.max(400, 2000 - (this.timer * 0.05));
+        // 🧠 Quantidade cresce devagar
+        const maxEnemies =
+            this.baseMaxEnemies +
+            Math.floor(this.timer / 8000); // +1 a cada 8s
 
-        if (this.spawnTimer >= currentSpawnInterval && this.enemies.length < this.maxEnemies) {
+        // 🧠 Spawn fica mais rápido, mas com limite
+        const spawnInterval = Math.max(
+            600, // nunca fica insano
+            this.baseSpawnInterval - (this.timer * 0.03)
+        );
+
+        // =========================
+        // 👾 SPAWN
+        // =========================
+
+        if (this.spawnTimer >= spawnInterval && this.enemies.length < maxEnemies) {
             this.spawn();
             this.spawnTimer = 0;
         }
 
-        this.enemies.forEach(enemy => enemy.update(player, this.timer));
+        // =========================
+        // 🧠 UPDATE DOS INIMIGOS
+        // =========================
+
+        for (let enemy of this.enemies) {
+            enemy.update(player, this.timer);
+        }
     }
 
     spawn() {
         let x, y;
         const margin = 50;
+
+        // 🔥 Spawn fora da tela (4 lados)
         const side = Math.floor(Math.random() * 4);
 
         switch (side) {
-            case 0: x = Math.random() * this.canvas.width; y = -margin; break;
-            case 1: x = this.canvas.width + margin; y = Math.random() * this.canvas.height; break;
-            case 2: x = Math.random() * this.canvas.width; y = this.canvas.height + margin; break;
-            case 3: x = -margin; y = Math.random() * this.canvas.height; break;
+            case 0: // topo
+                x = Math.random() * this.canvas.width;
+                y = -margin;
+                break;
+
+            case 1: // direita
+                x = this.canvas.width + margin;
+                y = Math.random() * this.canvas.height;
+                break;
+
+            case 2: // baixo
+                x = Math.random() * this.canvas.width;
+                y = this.canvas.height + margin;
+                break;
+
+            case 3: // esquerda
+                x = -margin;
+                y = Math.random() * this.canvas.height;
+                break;
         }
 
-        const newEnemy = new Enemy(x, y);
+        const enemy = new Enemy(x, y);
 
-        // 🔥 Scaling por tempo
-        if (newEnemy.applyScaling) {
-            newEnemy.applyScaling(this.timer);
-        }
+        // =========================
+        // 🔥 SCALING SUAVE (ESSENCIAL)
+        // =========================
 
-        this.enemies.push(newEnemy);
+        const timeFactor = this.timer / 10000; // escala bem lento
+
+        // ❤️ Vida cresce devagar
+        enemy.health = 2 + timeFactor * 1.5;
+
+        // 🏃 Velocidade cresce pouco (evita injustiça)
+        enemy.speed = 0.6 + Math.min(0.5, timeFactor * 0.2);
+
+        // 💥 Dano controlado
+        enemy.damage = 5 + Math.min(10, timeFactor * 2);
+
+        this.enemies.push(enemy);
     }
 
     draw(ctx) {
-        this.enemies.forEach(enemy => enemy.draw(ctx));
+        for (let enemy of this.enemies) {
+            enemy.draw(ctx);
+        }
     }
 }
