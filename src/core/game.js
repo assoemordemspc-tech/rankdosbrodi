@@ -125,19 +125,28 @@ export class Game {
 
     shootClosest() {
         const enemies = this.spawnSystem.enemies;
-        if (enemies.length === 0) return;
+    if (enemies.length === 0) return;
 
-        const closest = enemies.reduce((prev, curr) => {
-            const distPrev = Math.hypot(this.player.x - prev.x, this.player.y - prev.y);
-            const distCurr = Math.hypot(this.player.x - curr.x, this.player.y - curr.y);
-            return distCurr < distPrev ? curr : prev;
-        });
+    const closest = enemies.reduce((prev, curr) => {
+        const distPrev = Math.hypot(this.player.x - prev.x, this.player.y - prev.y);
+        const distCurr = Math.hypot(this.player.x - curr.x, this.player.y - curr.y);
+        return distCurr < distPrev ? curr : prev;
+    });
 
-        const p = new Projectile(
-            this.player.x,
-            this.player.y,
-            closest.x,
-            closest.y
+    const angle = Math.atan2(
+        closest.y - this.player.y,
+        closest.x - this.player.x
+    );
+
+    const p = new Projectile(
+        this.player.x,
+        this.player.y,
+        angle
+    );
+
+    p.damage = this.player.attackDamage;
+
+    this.projectiles.push(p);
         );
 
         // 💥 DANO DINÂMICO
