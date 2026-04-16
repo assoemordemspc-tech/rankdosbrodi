@@ -3,13 +3,10 @@ import { Enemy } from '../entities/enemy.js';
 export class SpawnSystem {
     constructor(canvas) {
         this.canvas = canvas;
-
         this.enemies = [];
-
         this.timer = 0;
         this.spawnTimer = 0;
 
-        // 🔥 Estado inicial equilibrado
         this.baseMaxEnemies = 5;
         this.baseSpawnInterval = 2000;
     }
@@ -20,24 +17,18 @@ export class SpawnSystem {
         this.timer += dt;
         this.spawnTimer += dt;
 
-        // 📈 Quantidade cresce devagar
-        const maxEnemies =
-            this.baseMaxEnemies +
-            Math.floor(this.timer / 8000);
+        const maxEnemies = this.baseMaxEnemies + Math.floor(this.timer / 8000);
 
-        // 📈 Spawn acelera com limite
         const spawnInterval = Math.max(
             600,
             this.baseSpawnInterval - (this.timer * 0.03)
         );
 
-        // 👾 Spawn
         if (this.spawnTimer >= spawnInterval && this.enemies.length < maxEnemies) {
             this.spawn();
             this.spawnTimer = 0;
         }
 
-        // 🧠 Update inimigos
         for (let enemy of this.enemies) {
             enemy.update(player, this.timer);
         }
@@ -46,36 +37,27 @@ export class SpawnSystem {
     spawn() {
         console.log('SPAWNANDO INIMIGO');
 
-        let x, y; // ✅ CORRETO (só uma vez)
+        let x, y;
         const margin = 50;
 
         const side = Math.floor(Math.random() * 4);
 
-        switch (side) {
-            case 0:
-                x = Math.random() * this.canvas.width;
-                y = -margin;
-                break;
-
-            case 1:
-                x = this.canvas.width + margin;
-                y = Math.random() * this.canvas.height;
-                break;
-
-            case 2:
-                x = Math.random() * this.canvas.width;
-                y = this.canvas.height + margin;
-                break;
-
-            case 3:
-                x = -margin;
-                y = Math.random() * this.canvas.height;
-                break;
+        if (side === 0) {
+            x = Math.random() * this.canvas.width;
+            y = -margin;
+        } else if (side === 1) {
+            x = this.canvas.width + margin;
+            y = Math.random() * this.canvas.height;
+        } else if (side === 2) {
+            x = Math.random() * this.canvas.width;
+            y = this.canvas.height + margin;
+        } else {
+            x = -margin;
+            y = Math.random() * this.canvas.height;
         }
 
         const enemy = new Enemy(x, y);
 
-        // 🔥 Scaling leve
         const timeFactor = this.timer / 10000;
 
         enemy.health = 2 + timeFactor * 1.5;
