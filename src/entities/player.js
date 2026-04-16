@@ -8,19 +8,19 @@ export class Player {
         // Atributos de Vida
         this.maxHealth = 100;
         this.health = 100;
-        this.iFrames = 0; // Frames de invulnerabilidade após tomar dano
+        this.iFrames = 0;
     }
 
     takeDamage(amount) {
-        if (this.iFrames > 0) return; // Proteção ativa
+        if (this.iFrames > 0) return;
         
         this.health -= amount;
-        this.iFrames = 30; // Fica invulnerável por meio segundo (aprox. 30 frames)
+        this.iFrames = 30;
+
         console.log(`Vida do Player: ${this.health}`);
         
         if (this.health <= 0) {
             this.health = 0;
-            // O Game.js cuidará do Game Over
         }
     }
 
@@ -28,15 +28,23 @@ export class Player {
         this.x += input.axes.x * this.velocity;
         this.y += input.axes.y * this.velocity;
 
-        // Reduz invulnerabilidade com o tempo
+        // 🔒 Limite da tela
+        this.x = Math.max(this.size / 2, Math.min(window.innerWidth - this.size / 2, this.x));
+        this.y = Math.max(this.size / 2, Math.min(window.innerHeight - this.size / 2, this.y));
+
+        // iFrames
         if (this.iFrames > 0) this.iFrames--;
     }
 
     draw(ctx) {
-        // Se estiver invulnerável, pisca o player (feedback visual)
         if (this.iFrames > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
 
         ctx.fillStyle = '#00ff00';
-        ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+        ctx.fillRect(
+            this.x - this.size / 2,
+            this.y - this.size / 2,
+            this.size,
+            this.size
+        );
     }
 }
