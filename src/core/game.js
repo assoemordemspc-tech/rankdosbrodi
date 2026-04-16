@@ -138,6 +138,18 @@ export class Game {
         this.projectiles.push(new Projectile(this.player.x, this.player.y, closest.x, closest.y));
     }
 
+    // 🔫 NOVO TIRO FIXO
+    shootFixed() {
+        this.projectiles.push(
+            new Projectile(
+                this.player.x,
+                this.player.y,
+                this.player.x + 100,
+                this.player.y
+            )
+        );
+    }
+
     handleClick(e) {
         if (this.state === 'LEVEL_UP') {
             const index = UpgradeMenu.getClickedOption(
@@ -162,13 +174,13 @@ export class Game {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Jogo (sempre desenha base)
+        // Jogo
         this.player.draw(this.ctx);
         this.spawnSystem.draw(this.ctx);
         this.projectiles.forEach(p => p.draw(this.ctx));
         this.xpSystem.draw(this.ctx);
 
-        // HUD (sempre visível)
+        // HUD
         HUD.draw(this.ctx, this.player, this.levelSystem, this.canvas);
 
         // LEVEL UP UI
