@@ -2,7 +2,7 @@ export class LevelSystem {
     constructor() {
         this.level = 1;
         this.currentXP = 0;
-        this.nextLevelXP = 5; // XP inicial necessário
+        this.nextLevelXP = 5;
         this.isSelectingUpgrade = false;
         this.availableUpgrades = [];
     }
@@ -17,7 +17,7 @@ export class LevelSystem {
     levelUp() {
         this.level++;
         this.currentXP = 0;
-        this.nextLevelXP = Math.floor(this.nextLevelXP * 1.5); // Escala de dificuldade
+        this.nextLevelXP = Math.floor(this.nextLevelXP * 1.5);
         this.isSelectingUpgrade = true;
         this.generateUpgrades();
     }
@@ -29,7 +29,6 @@ export class LevelSystem {
             { id: 'moveSpeed', name: 'Vel. Movimento +10%', type: 'stat' }
         ];
         
-        // Sorteia 3 opções (neste caso são as 3 que temos)
         this.availableUpgrades = pool.sort(() => 0.5 - Math.random()).slice(0, 3);
         
         console.log(`--- LEVEL UP: ${this.level} ---`);
@@ -44,12 +43,14 @@ export class LevelSystem {
 
         switch (upgrade.id) {
             case 'damage':
-                // Precisaremos adicionar 'damage' no projectile.js depois
-                console.log("Dano aumentado!");
+                // 🔥 Dano progressivo mais balanceado
+                player.attackDamage = (player.attackDamage || 1) + 0.1;
                 break;
+
             case 'attackSpeed':
                 game.attackInterval *= 0.85;
                 break;
+
             case 'moveSpeed':
                 player.velocity *= 1.1;
                 break;
