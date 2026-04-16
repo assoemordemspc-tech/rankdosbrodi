@@ -12,23 +12,29 @@ export class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+
         this.projectiles = [];
         this.attackTimer = 0;
-        this.shootingAngles = [0]; 
+        this.shootingAngles = [0];
+
         this.state = 'PLAYING';
+
         this.xpSystem = new XPSystem();
         this.levelSystem = new LevelSystem();
+
         this.lastTime = 0;
 
         window.addEventListener('mousedown', (e) => this.handleClick(e));
         window.addEventListener('touchstart', (e) => this.handleClick(e.touches[0]));
-        
+
         this.init();
     }
 
     init() {
         this.setupCanvas();
+
         window.addEventListener('resize', () => this.setupCanvas());
+
         this.input = new Input();
         this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
         this.spawnSystem = new SpawnSystem(this.canvas);
@@ -47,30 +53,48 @@ export class Game {
     loop(timeStamp) {
         const deltaTime = timeStamp - this.lastTime || 16;
         this.lastTime = timeStamp;
+
         this.update(deltaTime);
         this.draw();
+
         requestAnimationFrame((time) => this.loop(time));
     }
 
     update(dt) {
         if (this.state === 'GAME_OVER') return;
+
         if (this.levelSystem.isSelectingUpgrade) {
             this.state = 'LEVEL_UP';
             return;
         }
+
         this.state = 'PLAYING';
 
-        this.player.update(this.input, dt);
+        // =========================
+        // 🔥 CORREÇÃO PRINCIPAL AQUI
+        // =========================
+        this.player.update(
+            this.input,
+            dt,
+            this.spawnSystem.enemies,
+            this.projectiles
+        );
+
         this.spawnSystem.update(dt, this.player);
 
-        // 🔥 AUTO ATTACK AGORA É RESPONSABILIDADE DO PLAYER
+        // XP
+        this.xpSystem.update(this.player, (val) =>
+            this.levelSystem.addXP(val)
+        );
 
-        this.xpSystem.update(this.player, (val) => this.levelSystem.addXP(val));
-
-        // Atualizar projéteis
+        // =========================
+        // PROJÉTEIS
+        // =========================
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
+
             p.update();
+
             if (
                 p.x < 0 || p.x > this.canvas.width ||
                 p.y < 0 || p.y > this.canvas.height ||
@@ -80,17 +104,24 @@ export class Game {
             }
         }
 
-        // 🟥 Colisão INIMIGO -> PLAYER
+        // =========================
+        // COLISÃO PLAYER -> INIMIGO
+        // =========================
         CollisionSystem.checkCircleCollision(
             [this.player],
             this.spawnSystem.enemies,
             (player, enemy) => {
                 player.takeDamage(10);
-                if (player.health <= 0) this.state = 'GAME_OVER';
+
+                if (player.health <= 0) {
+                    this.state = 'GAME_OVER';
+                }
             }
         );
 
-        // 🟢 Colisão PROJÉTIL -> INIMIGO (PIERCE)
+        // =========================
+        // COLISÃO PROJÉTIL -> INIMIGO
+        // =========================
         CollisionSystem.checkCircleCollision(
             this.projectiles,
             this.spawnSystem.enemies,
@@ -104,37 +135,37 @@ export class Game {
                 }
 
                 if (enemy.health <= 0) {
-                    this.xpSystem.spawn(enemy.x, enemy.y); 
+                    this.xpSystem.spawn(enemy.x, enemy.y);
                     this.spawnSystem.enemies.splice(eIdx, 1);
                 }
             }
         );
     }
 
-    addProjectile(angle) { 
-        this.shootingAngles.push(angle); 
+    addProjectile(angle) {
+        this.shootingAngles.push(angle);
     }
 
-    setSpreadShot() { 
-        this.shootingAngles = [-0.2, 0, 0.2]; 
+    setSpreadShot() {
+        this.shootingAngles = [-0.2, 0, 0.2];
     }
 
-    setCircleShot() { 
+    setCircleShot() {
         this.shootingAngles = [];
         for (let i = 0; i < 8; i++) {
             this.shootingAngles.push((Math.PI * 2 / 8) * i);
         }
     }
 
-    setDoubleFront() { 
-        this.shootingAngles = [-0.1, 0.1]; 
+    setDoubleFront() {
+        this.shootingAngles = [-0.1, 0.1];
     }
 
     handleClick(e) {
         if (this.state === 'LEVEL_UP') {
             const index = UpgradeMenu.getClickedOption(
-                e.clientX, 
-                e.clientY, 
+                e.clientX,
+                e.clientY,
                 this.canvas
             );
 
@@ -158,12 +189,13 @@ export class Game {
         this.projectiles.forEach(p => p.draw(this.ctx));
 
         this.xpSystem.draw(this.ctx);
+
         HUD.draw(this.ctx, this.player, this.levelSystem, this.canvas);
 
         if (this.state === 'LEVEL_UP') {
             UpgradeMenu.draw(
-                this.ctx, 
-                this.canvas, 
+                this.ctx,
+                this.canvas,
                 this.levelSystem.availableUpgrades
             );
         }
