@@ -3,6 +3,8 @@ import { Input } from './input.js';
 import { SpawnSystem } from '../systems/spawnSystem.js';
 import { CollisionSystem } from '../systems/collisionSystem.js'; // Importando o novo sistema
 import { Projectile } from '../entities/projectile.js';
+import { XPSystem } from '../systems/xpSystem.js';
+import { LevelSystem } from '../mechanics/levelSystem.js';
 
 export class Game {
     constructor() {
@@ -14,6 +16,8 @@ export class Game {
         this.attackTimer = 0;
         this.attackInterval = 800; 
         this.lastTime = 0;
+        this.xpSystem = new XPSystem();
+        this.levelSystem = new LevelSystem();
 
         this.init();
     }
