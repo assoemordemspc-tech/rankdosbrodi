@@ -1,19 +1,49 @@
 export class Enemy {
-    constructor(x, y) {
+    constructor(x, y, type = 'normal') {
         this.x = x;
         this.y = y;
+        this.type = type;
+
         this.size = 25;
         this.health = 2;
         this.velocity = 0.5;
         this.flash = 0;
+
+        this.baseStats();
+    }
+
+    // 🌊 WAVE CONFIG (colocado aqui como você pediu)
+    static waves = [
+        { time: 0, enemies: ['normal'], rate: 1000 },
+        { time: 60, enemies: ['normal', 'fast'], rate: 800 },
+        { time: 120, enemies: ['tank'], rate: 2000, boss: true }
+    ];
+
+    baseStats() {
+        switch (this.type) {
+            case 'fast':
+                this.velocity = 1.2;
+                this.health = 1;
+                this.size = 20;
+                break;
+
+            case 'tank':
+                this.velocity = 0.4;
+                this.health = 6;
+                this.size = 35;
+                break;
+
+            default: // normal
+                this.velocity = 0.5;
+                this.health = 2;
+                this.size = 25;
+        }
     }
 
     applyScaling(totalTime) {
-        // --- EIXO 3: VELOCIDADE COM CAP ---
         const calculatedSpeed = 0.5 + (totalTime * 0.00002);
         this.velocity = Math.min(1.5, calculatedSpeed);
 
-        // --- EIXO 4: VIDA EM DEGRAUS ---
         if (totalTime < 15000) {
             this.health = 2;
         } else if (totalTime < 30000) {
