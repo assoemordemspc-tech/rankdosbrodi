@@ -1,42 +1,33 @@
-export class XPOrb {
-    constructor(x, y, value) {
-        this.x = x;
-        this.y = y;
-        this.value = value;
-        this.size = 6;
-    }
+update(player, onCollect) {
+    for (let i = this.orbs.length - 1; i >= 0; i--) {
+        const orb = this.orbs[i];
 
-    draw(ctx) {
-        ctx.fillStyle = '#00ffff'; // Ciano para XP
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
+        const dist = Math.hypot(player.x - orb.x, player.y - orb.y);
 
-export class XPSystem {
-    constructor() {
-        this.orbs = [];
-    }
+        // =========================
+        // 🧲 MAGNETISMO (ATRACÇÃO)
+        // =========================
+        if (player.magnetRadius && dist < player.magnetRadius) {
+            const angle = Math.atan2(player.y - orb.y, player.x - orb.x);
+            const force = 0.5;
 
-    spawn(x, y, value = 2) {
-        this.orbs.push(new XPOrb(x, y, value));
-    }
+            orb.vx = (orb.vx || 0) + Math.cos(angle) * force;
+            orb.vy = (orb.vy || 0) + Math.sin(angle) * force;
 
-    update(player, onCollect) {
-        for (let i = this.orbs.length - 1; i >= 0; i--) {
-            const orb = this.orbs[i];
-            const dist = Math.hypot(player.x - orb.x, player.y - orb.y);
-            
-            // Raio de coleta (pode ser aumentado com upgrades no futuro)
-            if (dist < player.size) {
-                onCollect(orb.value);
-                this.orbs.splice(i, 1);
-            }
+            orb.x += orb.vx;
+            orb.y += orb.vy;
+
+            // fricção (suaviza movimento)
+            orb.vx *= 0.95;
+            orb.vy *= 0.95;
         }
-    }
 
-    draw(ctx) {
-        this.orbs.forEach(orb => orb.draw(ctx));
+        // =========================
+        // 🎯 COLETA
+        // =========================
+        if (dist < player.size) {
+            onCollect(orb.value);
+            this.orbs.splice(i, 1);
+        }
     }
 }
