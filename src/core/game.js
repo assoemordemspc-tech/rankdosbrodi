@@ -19,12 +19,11 @@ export class Game {
         this.attackInterval = 800; 
         this.lastTime = 0;
 
-        this.state = 'PLAYING'; // PLAYING | LEVEL_UP | GAME_OVER
+        this.state = 'PLAYING';
 
         this.xpSystem = new XPSystem();
         this.levelSystem = new LevelSystem();
 
-        // Clique (mouse + mobile)
         window.addEventListener('mousedown', (e) => this.handleClick(e));
         window.addEventListener('touchstart', (e) => this.handleClick(e.touches[0]));
 
@@ -62,7 +61,6 @@ export class Game {
     update(dt) {
         if (this.state === 'GAME_OVER') return;
 
-        // 🔒 LEVEL UP trava o jogo
         if (this.levelSystem.isSelectingUpgrade) {
             this.state = 'LEVEL_UP';
             return;
@@ -100,12 +98,12 @@ export class Game {
             }
         );
 
-        // 🟢 COLISÃO PROJÉTIL → INIMIGO
+        // 🟢 COLISÃO PROJÉTIL → INIMIGO (DANO DINÂMICO)
         CollisionSystem.checkCircleCollision(
             this.projectiles, 
             this.spawnSystem.enemies, 
             (proj, enemy, pIdx, eIdx) => {
-                enemy.takeDamage(1);
+                enemy.takeDamage(proj.damage || 1);
 
                 this.projectiles.splice(pIdx, 1);
 
@@ -135,19 +133,31 @@ export class Game {
             return distCurr < distPrev ? curr : prev;
         });
 
-        this.projectiles.push(new Projectile(this.player.x, this.player.y, closest.x, closest.y));
+        const p = new Projectile(
+            this.player.x,
+            this.player.y,
+            closest.x,
+            closest.y
+        );
+
+        // 💥 DANO DINÂMICO
+        p.damage = this.player.attackDamage;
+
+        this.projectiles.push(p);
     }
 
-    // 🔫 NOVO TIRO FIXO
+    // 🔫 TIRO FIXO
     shootFixed() {
-        this.projectiles.push(
-            new Projectile(
-                this.player.x,
-                this.player.y,
-                this.player.x + 100,
-                this.player.y
-            )
+        const p = new Projectile(
+            this.player.x,
+            this.player.y,
+            this.player.x + 100,
+            this.player.y
         );
+
+        p.damage = this.player.attackDamage;
+
+        this.projectiles.push(p);
     }
 
     handleClick(e) {
@@ -170,20 +180,16 @@ export class Game {
     }
 
     draw() {
-        // Fundo
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Jogo
         this.player.draw(this.ctx);
         this.spawnSystem.draw(this.ctx);
         this.projectiles.forEach(p => p.draw(this.ctx));
         this.xpSystem.draw(this.ctx);
 
-        // HUD
         HUD.draw(this.ctx, this.player, this.levelSystem, this.canvas);
 
-        // LEVEL UP UI
         if (this.state === 'LEVEL_UP') {
             UpgradeMenu.draw(
                 this.ctx,
@@ -192,7 +198,6 @@ export class Game {
             );
         }
 
-        // GAME OVER
         if (this.state === 'GAME_OVER') {
             this.drawGameOver();
         }
