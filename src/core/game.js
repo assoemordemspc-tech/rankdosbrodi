@@ -171,9 +171,9 @@ setDoubleFront() {
     if (enemies.length === 0) return;
 
     const closest = enemies.reduce((prev, curr) => {
-        const distPrev = Math.hypot(this.player.x - prev.x, this.player.y - prev.y);
-        const distCurr = Math.hypot(this.player.x - curr.x, this.player.y - curr.y);
-        return distCurr < distPrev ? curr : prev;
+        const dPrev = Math.hypot(this.player.x - prev.x, this.player.y - prev.y);
+        const dCurr = Math.hypot(this.player.x - curr.x, this.player.y - curr.y);
+        return dCurr < dPrev ? curr : prev;
     });
 
     const angle = Math.atan2(
@@ -188,14 +188,7 @@ setDoubleFront() {
     );
 
     p.damage = this.player.attackDamage;
-
     this.projectiles.push(p);
-        );
-
-        // 💥 DANO DINÂMICO
-        p.damage = this.player.attackDamage;
-
-        this.projectiles.push(p);
     }
 
     // 🔫 TIRO FIXO
