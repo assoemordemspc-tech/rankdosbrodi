@@ -117,7 +117,7 @@ export class Game {
 
     handleAutoAttack(dt) {
         this.attackTimer += dt;
-        if (this.attackTimer >= this.attackInterval) {
+        if (this.attackTimer >= this.attackInterval = 1000; // 1 segundo inicial
             this.shootClosest();
             this.attackTimer = 0;
         }
