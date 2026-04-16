@@ -60,100 +60,90 @@ export class Game {
         }
         this.state = 'PLAYING';
 
-        this.player.update(this.input);
+        this.player.update(this.input, dt);
         this.spawnSystem.update(dt, this.player);
-        this.handleAutoAttack(dt);
+
+        // 🔥 AUTO ATTACK AGORA É RESPONSABILIDADE DO PLAYER
+
         this.xpSystem.update(this.player, (val) => this.levelSystem.addXP(val));
 
-        // Atualizar projéteis e remover se saírem da tela ou morrerem
+        // Atualizar projéteis
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
             p.update();
-            if (p.x < 0 || p.x > this.canvas.width || p.y < 0 || p.y > this.canvas.height || p.isDead()) {
+            if (
+                p.x < 0 || p.x > this.canvas.width ||
+                p.y < 0 || p.y > this.canvas.height ||
+                p.isDead()
+            ) {
                 this.projectiles.splice(i, 1);
             }
         }
 
         // 🟥 Colisão INIMIGO -> PLAYER
-        CollisionSystem.checkCircleCollision([this.player], this.spawnSystem.enemies, (player, enemy) => {
-            player.takeDamage(10);
-            if (player.health <= 0) this.state = 'GAME_OVER';
-        });
-
-        // 🟢 Colisão PROJÉTIL -> INIMIGO (Com sistema de PIERCE)
-        CollisionSystem.checkCircleCollision(this.projectiles, this.spawnSystem.enemies, (proj, enemy, pIdx, eIdx) => {
-            // Aplica dano ao inimigo
-            enemy.takeDamage(proj.damage || 1);
-            
-            // Diminui a capacidade de penetração do projétil
-            proj.pierce--;
-            
-            // Se o projétil gastou toda a penetração, removemos ele do array
-            if (proj.pierce <= 0) {
-                this.projectiles.splice(pIdx, 1);
+        CollisionSystem.checkCircleCollision(
+            [this.player],
+            this.spawnSystem.enemies,
+            (player, enemy) => {
+                player.takeDamage(10);
+                if (player.health <= 0) this.state = 'GAME_OVER';
             }
+        );
 
-            // Se o inimigo morreu, gera XP e remove o inimigo
-            if (enemy.health <= 0) {
-                this.xpSystem.spawn(enemy.x, enemy.y); 
-                this.spawnSystem.enemies.splice(eIdx, 1);
+        // 🟢 Colisão PROJÉTIL -> INIMIGO (PIERCE)
+        CollisionSystem.checkCircleCollision(
+            this.projectiles,
+            this.spawnSystem.enemies,
+            (proj, enemy, pIdx, eIdx) => {
+
+                enemy.takeDamage(proj.damage || 1);
+                proj.pierce--;
+
+                if (proj.pierce <= 0) {
+                    this.projectiles.splice(pIdx, 1);
+                }
+
+                if (enemy.health <= 0) {
+                    this.xpSystem.spawn(enemy.x, enemy.y); 
+                    this.spawnSystem.enemies.splice(eIdx, 1);
+                }
             }
-        });
+        );
     }
 
-    handleAutoAttack(dt) {
-        this.attackTimer += dt;
-        if (this.attackTimer >= this.player.attackSpeed) {
-            this.fireProjectiles();
-            this.attackTimer = 0;
-        }
+    addProjectile(angle) { 
+        this.shootingAngles.push(angle); 
     }
 
-    getAngleToClosestEnemy() {
-        const enemies = this.spawnSystem.enemies;
-        if (enemies.length === 0) {
-            return Math.atan2(this.player.lastDirection.y, this.player.lastDirection.x);
-        }
-
-        let closest = enemies[0];
-        let minDist = Math.hypot(this.player.x - closest.x, this.player.y - closest.y);
-
-        for (let i = 1; i < enemies.length; i++) {
-            const dist = Math.hypot(this.player.x - enemies[i].x, this.player.y - enemies[i].y);
-            if (dist < minDist) {
-                minDist = dist;
-                closest = enemies[i];
-            }
-        }
-        return Math.atan2(closest.y - this.player.y, closest.x - this.player.x);
+    setSpreadShot() { 
+        this.shootingAngles = [-0.2, 0, 0.2]; 
     }
 
-    fireProjectiles() {
-        const baseAngle = this.getAngleToClosestEnemy();
-        this.shootingAngles.forEach(angleOffset => {
-            const finalAngle = baseAngle + angleOffset;
-            const p = new Projectile(this.player.x, this.player.y, finalAngle);
-            p.damage = this.player.attackDamage;
-            this.projectiles.push(p);
-        });
-    }
-
-    addProjectile(angle) { this.shootingAngles.push(angle); }
-    setSpreadShot() { this.shootingAngles = [-0.2, 0, 0.2]; }
     setCircleShot() { 
         this.shootingAngles = [];
-        for (let i = 0; i < 8; i++) this.shootingAngles.push((Math.PI * 2 / 8) * i);
+        for (let i = 0; i < 8; i++) {
+            this.shootingAngles.push((Math.PI * 2 / 8) * i);
+        }
     }
-    setDoubleFront() { this.shootingAngles = [-0.1, 0.1]; }
+
+    setDoubleFront() { 
+        this.shootingAngles = [-0.1, 0.1]; 
+    }
 
     handleClick(e) {
         if (this.state === 'LEVEL_UP') {
-            const index = UpgradeMenu.getClickedOption(e.clientX, e.clientY, this.canvas);
+            const index = UpgradeMenu.getClickedOption(
+                e.clientX, 
+                e.clientY, 
+                this.canvas
+            );
+
             if (index !== null) {
                 this.levelSystem.applyUpgrade(index, this.player, this);
                 this.state = 'PLAYING';
             }
-        } else if (this.state === 'GAME_OVER') {
+        } 
+        else if (this.state === 'GAME_OVER') {
             location.reload();
         }
     }
@@ -161,23 +151,39 @@ export class Game {
     draw() {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
         this.player.draw(this.ctx);
         this.spawnSystem.draw(this.ctx);
+
         this.projectiles.forEach(p => p.draw(this.ctx));
+
         this.xpSystem.draw(this.ctx);
         HUD.draw(this.ctx, this.player, this.levelSystem, this.canvas);
+
         if (this.state === 'LEVEL_UP') {
-            UpgradeMenu.draw(this.ctx, this.canvas, this.levelSystem.availableUpgrades);
+            UpgradeMenu.draw(
+                this.ctx, 
+                this.canvas, 
+                this.levelSystem.availableUpgrades
+            );
         }
-        if (this.state === 'GAME_OVER') this.drawGameOver();
+
+        if (this.state === 'GAME_OVER') {
+            this.drawGameOver();
+        }
     }
 
     drawGameOver() {
         this.ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
         this.ctx.fillStyle = '#fff';
         this.ctx.textAlign = 'center';
         this.ctx.font = '40px Arial';
-        this.ctx.fillText('VOCÊ MORREU', this.canvas.width / 2, this.canvas.height / 2);
+        this.ctx.fillText(
+            'VOCÊ MORREU',
+            this.canvas.width / 2,
+            this.canvas.height / 2
+        );
     }
 }
