@@ -6,6 +6,9 @@ import { Projectile } from '../entities/projectile.js';
 import { XPSystem } from '../systems/xpSystem.js';
 import { LevelSystem } from '../mechanics/levelSystem.js';
 
+import { HUD } from '../ui/hud.js';
+import { UpgradeMenu } from '../ui/upgradeMenu.js';
+
 export class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -16,8 +19,14 @@ export class Game {
         this.attackInterval = 800; 
         this.lastTime = 0;
 
+        this.state = 'PLAYING'; // PLAYING | LEVEL_UP | GAME_OVER
+
         this.xpSystem = new XPSystem();
         this.levelSystem = new LevelSystem();
+
+        // Clique (mouse + mobile)
+        window.addEventListener('mousedown', (e) => this.handleClick(e));
+        window.addEventListener('touchstart', (e) => this.handleClick(e.touches[0]));
 
         this.init();
     }
@@ -51,11 +60,15 @@ export class Game {
     }
 
     update(dt) {
-        // 🔒 TRAVA DURANTE UPGRADE
+        if (this.state === 'GAME_OVER') return;
+
+        // 🔒 LEVEL UP trava o jogo
         if (this.levelSystem.isSelectingUpgrade) {
-            this.handleUpgradeInput();
-            return; 
+            this.state = 'LEVEL_UP';
+            return;
         }
+
+        this.state = 'PLAYING';
 
         this.player.update(this.input);
         this.spawnSystem.update(dt, this.player);
@@ -64,7 +77,7 @@ export class Game {
 
         this.xpSystem.update(this.player, (val) => this.levelSystem.addXP(val));
 
-        // Projéteis (loop seguro)
+        // Projéteis
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
             p.update();
@@ -82,8 +95,7 @@ export class Game {
                 player.takeDamage(10);
 
                 if (player.health <= 0) {
-                    alert("Game Over! A horda venceu.");
-                    location.reload();
+                    this.state = 'GAME_OVER';
                 }
             }
         );
@@ -126,12 +138,23 @@ export class Game {
         this.projectiles.push(new Projectile(this.player.x, this.player.y, closest.x, closest.y));
     }
 
-    handleUpgradeInput() {
-        if (this.input.lastKey === '1') this.levelSystem.applyUpgrade(0, this.player, this);
-        if (this.input.lastKey === '2') this.levelSystem.applyUpgrade(1, this.player, this);
-        if (this.input.lastKey === '3') this.levelSystem.applyUpgrade(2, this.player, this);
+    handleClick(e) {
+        if (this.state === 'LEVEL_UP') {
+            const index = UpgradeMenu.getClickedOption(
+                e.clientX,
+                e.clientY,
+                this.canvas
+            );
 
-        this.input.lastKey = null;
+            if (index !== null) {
+                this.levelSystem.applyUpgrade(index, this.player, this);
+                this.state = 'PLAYING';
+            }
+        }
+
+        if (this.state === 'GAME_OVER') {
+            location.reload();
+        }
     }
 
     draw() {
@@ -139,40 +162,44 @@ export class Game {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Entidades
+        // Jogo (sempre desenha base)
         this.player.draw(this.ctx);
         this.spawnSystem.draw(this.ctx);
         this.projectiles.forEach(p => p.draw(this.ctx));
-
-        // XP
         this.xpSystem.draw(this.ctx);
 
-        // Tela de Level Up
-        if (this.levelSystem.isSelectingUpgrade) {
-            this.ctx.fillStyle = 'rgba(0,0,0,0.7)';
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // HUD (sempre visível)
+        HUD.draw(this.ctx, this.player, this.levelSystem, this.canvas);
 
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = '20px Arial';
-            this.ctx.fillText(
-                "LEVEL UP! Escolha 1, 2 ou 3",
-                this.canvas.width / 2 - 140,
-                this.canvas.height / 2
+        // LEVEL UP UI
+        if (this.state === 'LEVEL_UP') {
+            UpgradeMenu.draw(
+                this.ctx,
+                this.canvas,
+                this.levelSystem.availableUpgrades
             );
         }
 
-        // ❤️ Barra de vida
-        const barWidth = 200;
+        // GAME OVER
+        if (this.state === 'GAME_OVER') {
+            this.drawGameOver();
+        }
+    }
 
-        this.ctx.fillStyle = "#333";
-        this.ctx.fillRect(20, 20, barWidth, 10);
+    drawGameOver() {
+        this.ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        this.ctx.fillStyle = "#ff0000";
-        this.ctx.fillRect(
-            20,
-            20,
-            (this.player.health / this.player.maxHealth) * barWidth,
-            10
+        this.ctx.fillStyle = '#fff';
+        this.ctx.textAlign = 'center';
+        this.ctx.font = '40px Arial';
+        this.ctx.fillText('VOCÊ MORREU', this.canvas.width / 2, this.canvas.height / 2);
+
+        this.ctx.font = '20px Arial';
+        this.ctx.fillText(
+            'Clique para tentar novamente',
+            this.canvas.width / 2,
+            this.canvas.height / 2 + 50
         );
     }
 }
