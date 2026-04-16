@@ -3,9 +3,14 @@ export class Player {
         this.x = x;
         this.y = y;
         this.size = 30;
-        this.velocity = 5;
+
+        // 🎮 Movimento balanceado
+        this.velocity = 2.5;
+
+        // ⚔️ Dano base
+        this.attackDamage = 1;
         
-        // Atributos de Vida
+        // ❤️ Vida
         this.maxHealth = 100;
         this.health = 100;
         this.iFrames = 0;
