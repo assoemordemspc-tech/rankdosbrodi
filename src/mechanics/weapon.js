@@ -11,11 +11,11 @@ export class Weapon {
 
     update(dt, player, enemies, projectiles) {
         this.timer += dt;
-        if (this.timer >= this.cooldown) {
-            // Só atira se houver inimigos (opcional, para performance)
-            if (enemies.length > 0) {
-                this.fire(player, enemies, projectiles);
-                this.timer = 0;
+    if (this.timer >= this.cooldown) {
+        // O erro acontece aqui se 'enemies' for undefined
+        if (enemies && enemies.length > 0) { 
+            this.fire(player, enemies, projectiles);
+            this.timer = 0;
             }
         }
     }
