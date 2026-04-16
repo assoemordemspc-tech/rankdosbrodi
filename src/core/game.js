@@ -25,7 +25,7 @@ export class Game {
 
         window.addEventListener('mousedown', (e) => this.handleClick(e));
         window.addEventListener('touchstart', (e) => this.handleClick(e.touches[0]));
-
+        this.lastTime = 0;
         this.init();
     }
 
@@ -44,12 +44,13 @@ export class Game {
     }
 
     start() {
-        requestAnimationFrame((time) => this.loop(time));
+    this.lastTime = performance.now();
+    requestAnimationFrame((time) => this.loop(time));
     }
 
     loop(timeStamp) {
-        const deltaTime = timeStamp - this.lastTime;
-        this.lastTime = timeStamp;
+       const deltaTime = timeStamp - this.lastTime || 16;
+    this.lastTime = timeStamp;
 
         this.update(deltaTime);
         this.draw();
