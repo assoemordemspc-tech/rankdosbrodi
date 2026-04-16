@@ -15,8 +15,10 @@ export class SpawnSystem {
     }
 
     update(dt, player) {
-        this.timer += dt;
-        this.spawnTimer += dt;
+    console.log('spawn funcionando'); // 👈 ADICIONA AQUI
+
+    this.timer += dt;
+    this.spawnTimer += dt;
 
         // =========================
         // 📈 PROGRESSÃO CONTROLADA
@@ -52,6 +54,10 @@ export class SpawnSystem {
     }
 
     spawn() {
+        spawn() {
+    console.log('SPAWNANDO INIMIGO'); // 👈 ESSENCIAL
+
+    let x, y;
         let x, y;
         const margin = 50;
 
