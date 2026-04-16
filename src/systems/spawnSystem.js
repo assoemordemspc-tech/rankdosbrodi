@@ -54,7 +54,6 @@ export class SpawnSystem {
     }
 
     spawn() {
-        spawn() {
     console.log('SPAWNANDO INIMIGO'); // 👈 ESSENCIAL
 
     let x, y;
