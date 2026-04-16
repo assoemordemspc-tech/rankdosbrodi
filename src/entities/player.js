@@ -8,13 +8,13 @@ export class Player {
 
         this.velocity = 2.5;
 
-        // ⚔️ Sistema de armas modular
+        // ⚔️ Sistema modular de armas
         this.weapons = [new MagicWand()];
 
-        // 🧲 Pickup system
+        // 🧲 Sistema de coleta
         this.magnetRadius = 150;
 
-        // ⚔️ Combate legado (mantido para compatibilidade)
+        // ⚔️ Legacy combat (compatibilidade)
         this.attackDamage = 1;
         this.attackSpeed = 1000;
         this.lastDirection = { x: 1, y: 0 };
@@ -31,29 +31,24 @@ export class Player {
         this.health -= amount;
         this.iFrames = 30;
 
-        if (this.health <= 0) {
-            this.health = 0;
-        }
+        if (this.health < 0) this.health = 0;
     }
 
-    update(input, dt, enemies, projectiles) {
+    update(input, dt, enemies = [], projectiles = []) {
         // ======================
         // 🎮 MOVIMENTO
         // ======================
         this.x += input.axes.x * this.velocity;
         this.y += input.axes.y * this.velocity;
 
-        this.x = Math.max(
-            this.size / 2,
-            Math.min(window.innerWidth - this.size / 2, this.x)
-        );
+        // limites da tela
+        const w = window.innerWidth;
+        const h = window.innerHeight;
 
-        this.y = Math.max(
-            this.size / 2,
-            Math.min(window.innerHeight - this.size / 2, this.y)
-        );
+        this.x = Math.max(this.size / 2, Math.min(w - this.size / 2, this.x));
+        this.y = Math.max(this.size / 2, Math.min(h - this.size / 2, this.y));
 
-        // 📌 última direção
+        // 📌 última direção válida
         if (input.axes.x !== 0 || input.axes.y !== 0) {
             this.lastDirection = {
                 x: input.axes.x,
@@ -62,11 +57,14 @@ export class Player {
         }
 
         // ======================
-        // ⚔️ ARMAS (SYSTEM MODULAR)
+        // ⚔️ ARMAS (SISTEMA MODULAR)
         // ======================
-        this.weapons.forEach(w =>
-            w.update(dt, this, enemies, projectiles)
-        );
+        for (let i = 0; i < this.weapons.length; i++) {
+            const weapon = this.weapons[i];
+
+            // 🔥 CORREÇÃO PRINCIPAL:
+            weapon.update(dt, this, enemies, projectiles);
+        }
 
         // ======================
         // ⏱️ iFrames
@@ -75,9 +73,11 @@ export class Player {
     }
 
     draw(ctx) {
+        // piscada de invencibilidade
         if (this.iFrames > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
 
         ctx.fillStyle = '#00ff00';
+
         ctx.fillRect(
             this.x - this.size / 2,
             this.y - this.size / 2,
