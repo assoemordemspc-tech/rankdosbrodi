@@ -1,22 +1,27 @@
 export class Weapon {
     constructor(config) {
-        this.name = config.name;
-        this.damage = config.damage;
-        this.cooldown = config.cooldown; // Velocidade de ataque
-        this.pierce = config.pierce;
+        this.name = config.name || "Arma";
+        this.level = 1;
+        this.cooldown = config.cooldown || 1000; // ms
         this.timer = 0;
-        this.type = config.type; // 'auto-aim', 'orbital', 'directional'
+        this.damage = config.damage || 1;
+        this.pierce = config.pierce || 1;
+        this.projectileSpeed = config.projectileSpeed || 10;
     }
 
     update(dt, player, enemies, projectiles) {
         this.timer += dt;
         if (this.timer >= this.cooldown) {
-            this.fire(player, enemies, projectiles);
-            this.timer = 0;
+            // Só atira se houver inimigos (opcional, para performance)
+            if (enemies.length > 0) {
+                this.fire(player, enemies, projectiles);
+                this.timer = 0;
+            }
         }
     }
 
+    // Método que cada arma específica vai sobrescrever
     fire(player, enemies, projectiles) {
-        // Lógica específica de cada arma (ex: busca inimigo mais próximo)
+        console.warn(`${this.name} não implementou o método fire!`);
     }
 }
