@@ -1,3 +1,4 @@
+console.log('ARQUIVO NOVO CARREGADO');
 import { Enemy } from '../entities/enemy.js';
 
 export class SpawnSystem {
