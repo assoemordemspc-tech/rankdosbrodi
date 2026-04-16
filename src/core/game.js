@@ -77,11 +77,12 @@ export class Game {
 
         // Projéteis
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
-            const p = this.projectiles[i];
-            p.update();
+    const p = this.projectiles[i];
+    p.update();
 
-            if (p.x < 0 || p.x > this.canvas.width || p.y < 0 || p.y > this.canvas.height) {
-                this.projectiles.splice(i, 1);
+    // Remove se sair da tela OU se o tempo de vida acabar
+    if (p.x < 0 || p.x > this.canvas.width || p.y < 0 || p.y > this.canvas.height || p.isDead()) {
+        this.projectiles.splice(i, 1);
             }
         }
 
