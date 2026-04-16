@@ -5,7 +5,7 @@ export class SpawnSystem {
         this.canvas = canvas;
         this.enemies = [];
         this.spawnTimer = 0;
-        this.timer = 0; // Tempo total de jogo em ms
+        this.timer = 0; // Tempo total em ms
     }
 
     spawn() {
@@ -13,7 +13,6 @@ export class SpawnSystem {
         let x, y;
         const padding = 50;
 
-        // Define o spawn fora da visão do jogador
         if (side === 0) { x = Math.random() * this.canvas.width; y = -padding; }
         else if (side === 1) { x = this.canvas.width + padding; y = Math.random() * this.canvas.height; }
         else if (side === 2) { x = Math.random() * this.canvas.width; y = this.canvas.height + padding; }
@@ -21,17 +20,20 @@ export class SpawnSystem {
 
         const enemy = new Enemy(x, y);
 
-        // --- LÓGICA DE DIFICULDADE EQUILIBRADA ---
-        
-        // A cada 30 segundos (30000ms), o nível de dificuldade sobe
-        const difficultyLevel = Math.floor(this.timer / 30000);
+        // --- NOVA LÓGICA DE DIFICULDADE SUAVE ---
+        const secondsPassed = this.timer / 1000;
 
-        // HP: Começa com 1. Sobe +1 a cada nível, mas trava no 10.
-        // Isso garante que mesmo no "late game" eles morram com alguns tiros.
-        enemy.health = 1 + Math.min(difficultyLevel, 9);
+        // HP: 1 tiro mata nos primeiros 45 segundos.
+        // Depois disso, ganha +1 de HP a cada 45 segundos.
+        // O teto agora é 6, tornando-os muito mais fáceis de matar no late game.
+        let calculatedHP = 1;
+        if (secondsPassed > 45) {
+            calculatedHP += Math.floor((secondsPassed - 45) / 45);
+        }
+        enemy.health = Math.min(calculatedHP, 6);
 
-        // Velocidade: Aumenta levemente, mas nunca passa de 2.5
-        enemy.velocity = 1 + Math.min(difficultyLevel * 0.2, 1.5);
+        // Velocidade: Cresce bem mais devagar para não te atropelarem.
+        enemy.velocity = 0.8 + Math.min(secondsPassed / 120, 1.2); 
 
         this.enemies.push(enemy);
     }
@@ -40,13 +42,13 @@ export class SpawnSystem {
         this.timer += dt;
         this.spawnTimer += dt;
 
-        // --- CONTROLE DE POPULAÇÃO ---
-        
-        // Intervalo de spawn: começa em 1.5s e diminui até 0.5s conforme o tempo passa
-        const spawnInterval = Math.max(1500 - (this.timer / 1000) * 10, 500);
+        // Intervalo de Spawn mais generoso:
+        // Começa com 2 segundos entre cada monstro e diminui devagar.
+        const spawnInterval = Math.max(2000 - (this.timer / 1000) * 8, 700);
 
-        // Limite de inimigos: No início 10, aumenta até 40 conforme o jogo progride
-        const maxEnemies = 10 + Math.min(Math.floor(this.timer / 20000) * 5, 30);
+        // Limite de inimigos na tela:
+        // Começa com no máximo 8 e sobe 4 a cada 30 segundos, até o máximo de 30.
+        const maxEnemies = 8 + Math.min(Math.floor(this.timer / 30000) * 4, 22);
 
         if (this.spawnTimer >= spawnInterval && this.enemies.length < maxEnemies) {
             this.spawn();
