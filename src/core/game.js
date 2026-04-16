@@ -116,12 +116,54 @@ export class Game {
     }
 
     handleAutoAttack(dt) {
-        this.attackTimer += dt || 16;
-        if (this.attackTimer >= this.attackInterval = 1000; // 1 segundo inicial
-            this.shootClosest();
-            this.attackTimer = 0;
-        }
+        this.attackTimer += dt;
+    // Usamos o attackSpeed que está no Player agora
+    if (this.attackTimer >= this.player.attackSpeed) {
+        this.fireProjectiles();
+        this.attackTimer = 0;
     }
+}
+
+fireProjectiles() {
+    // Para cada ângulo salvo no array, dispara um projétil
+    this.shootingAngles.forEach(angleOffset => {
+        // Calcula o ângulo base (para onde o player está olhando) 
+        // ou usa um ângulo fixo se preferir. 
+        // Vamos usar o ângulo da lastDirection do player:
+        const baseAngle = Math.atan2(this.player.lastDirection.y, this.player.lastDirection.x);
+        
+        const finalAngle = baseAngle + angleOffset;
+
+        const p = new Projectile(this.player.x, this.player.y, finalAngle);
+        p.damage = this.player.attackDamage;
+        this.projectiles.push(p);
+    });
+}
+
+// --- FUNÇÕES DE SUPORTE PARA UPGRADES ---
+
+addProjectile(angle) {
+    // Adiciona uma nova direção permanente (ex: atirar para trás)
+    this.shootingAngles.push(angle);
+}
+
+setSpreadShot() {
+    // Transforma o tiro em 3 tiros em cone
+    this.shootingAngles = [-0.2, 0, 0.2];
+}
+
+setCircleShot() {
+    // Atira em 8 direções ao redor
+    this.shootingAngles = [];
+    for (let i = 0; i < 8; i++) {
+        this.shootingAngles.push((Math.PI * 2 / 8) * i);
+    }
+}
+
+setDoubleFront() {
+    // Dois tiros paralelos/próximos na frente
+    this.shootingAngles = [-0.05, 0.05];
+}
 
     shootClosest() {
         const enemies = this.spawnSystem.enemies;
