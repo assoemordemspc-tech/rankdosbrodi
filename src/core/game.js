@@ -5,7 +5,6 @@ import { CollisionSystem } from '../systems/collisionSystem.js';
 import { Projectile } from '../entities/projectile.js';
 import { XPSystem } from '../systems/xpSystem.js';
 import { LevelSystem } from '../mechanics/levelSystem.js';
-
 import { HUD } from '../ui/hud.js';
 import { UpgradeMenu } from '../ui/upgradeMenu.js';
 
@@ -13,26 +12,23 @@ export class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        
         this.projectiles = [];
         this.attackTimer = 0;
-        this.shootingAngles = [0]; // Direção base (0 radianos = Direita)
-
+        this.shootingAngles = [0]; 
         this.state = 'PLAYING';
-
         this.xpSystem = new XPSystem();
         this.levelSystem = new LevelSystem();
+        this.lastTime = 0;
 
         window.addEventListener('mousedown', (e) => this.handleClick(e));
         window.addEventListener('touchstart', (e) => this.handleClick(e.touches[0]));
-        this.lastTime = 0;
+        
         this.init();
     }
 
     init() {
         this.setupCanvas();
         window.addEventListener('resize', () => this.setupCanvas());
-
         this.input = new Input();
         this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
         this.spawnSystem = new SpawnSystem(this.canvas);
@@ -51,66 +47,45 @@ export class Game {
     loop(timeStamp) {
         const deltaTime = timeStamp - this.lastTime || 16;
         this.lastTime = timeStamp;
-
         this.update(deltaTime);
         this.draw();
-
         requestAnimationFrame((time) => this.loop(time));
     }
 
     update(dt) {
         if (this.state === 'GAME_OVER') return;
-
         if (this.levelSystem.isSelectingUpgrade) {
             this.state = 'LEVEL_UP';
             return;
         }
-
         this.state = 'PLAYING';
 
         this.player.update(this.input);
         this.spawnSystem.update(dt, this.player);
-
         this.handleAutoAttack(dt);
-
         this.xpSystem.update(this.player, (val) => this.levelSystem.addXP(val));
 
-        // Atualizar e Limpar Projéteis
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
             p.update();
-
             if (p.x < 0 || p.x > this.canvas.width || p.y < 0 || p.y > this.canvas.height || p.isDead()) {
                 this.projectiles.splice(i, 1);
             }
         }
 
-        // 🟥 COLISÃO INIMIGO -> PLAYER
-        CollisionSystem.checkCircleCollision(
-            [this.player],
-            this.spawnSystem.enemies,
-            (player, enemy) => {
-                player.takeDamage(10);
-                if (player.health <= 0) {
-                    this.state = 'GAME_OVER';
-                }
-            }
-        );
+        CollisionSystem.checkCircleCollision([this.player], this.spawnSystem.enemies, (player, enemy) => {
+            player.takeDamage(10);
+            if (player.health <= 0) this.state = 'GAME_OVER';
+        });
 
-        // 🟢 COLISÃO PROJÉTIL -> INIMIGO
-        CollisionSystem.checkCircleCollision(
-            this.projectiles, 
-            this.spawnSystem.enemies, 
-            (proj, enemy, pIdx, eIdx) => {
-                enemy.takeDamage(proj.damage || 1);
-                this.projectiles.splice(pIdx, 1);
-
-                if (enemy.health <= 0) {
-                    this.xpSystem.spawn(enemy.x, enemy.y); 
-                    this.spawnSystem.enemies.splice(eIdx, 1);
-                }
+        CollisionSystem.checkCircleCollision(this.projectiles, this.spawnSystem.enemies, (proj, enemy, pIdx, eIdx) => {
+            enemy.takeDamage(proj.damage || 1);
+            this.projectiles.splice(pIdx, 1);
+            if (enemy.health <= 0) {
+                this.xpSystem.spawn(enemy.x, enemy.y); 
+                this.spawnSystem.enemies.splice(eIdx, 1);
             }
-        );
+        });
     }
 
     handleAutoAttack(dt) {
@@ -122,9 +97,7 @@ export class Game {
     }
 
     fireProjectiles() {
-        // Calcula ângulo baseado na última direção de movimento do player
         const baseAngle = Math.atan2(this.player.lastDirection.y, this.player.lastDirection.x);
-        
         this.shootingAngles.forEach(angleOffset => {
             const finalAngle = baseAngle + angleOffset;
             const p = new Projectile(this.player.x, this.player.y, finalAngle);
@@ -133,25 +106,13 @@ export class Game {
         });
     }
 
-    // --- MÉTODOS PARA UPGRADES ---
-    addProjectile(angle) {
-        this.shootingAngles.push(angle);
-    }
-
-    setSpreadShot() {
-        this.shootingAngles = [-0.2, 0, 0.2];
-    }
-
-    setCircleShot() {
+    addProjectile(angle) { this.shootingAngles.push(angle); }
+    setSpreadShot() { this.shootingAngles = [-0.2, 0, 0.2]; }
+    setCircleShot() { 
         this.shootingAngles = [];
-        for (let i = 0; i < 8; i++) {
-            this.shootingAngles.push((Math.PI * 2 / 8) * i);
-        }
+        for (let i = 0; i < 8; i++) this.shootingAngles.push((Math.PI * 2 / 8) * i);
     }
-
-    setDoubleFront() {
-        this.shootingAngles = [-0.1, 0.1];
-    }
+    setDoubleFront() { this.shootingAngles = [-0.1, 0.1]; }
 
     handleClick(e) {
         if (this.state === 'LEVEL_UP') {
@@ -160,8 +121,7 @@ export class Game {
                 this.levelSystem.applyUpgrade(index, this.player, this);
                 this.state = 'PLAYING';
             }
-        }
-        if (this.state === 'GAME_OVER') {
+        } else if (this.state === 'GAME_OVER') {
             location.reload();
         }
     }
@@ -169,21 +129,15 @@ export class Game {
     draw() {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
         this.player.draw(this.ctx);
         this.spawnSystem.draw(this.ctx);
         this.projectiles.forEach(p => p.draw(this.ctx));
         this.xpSystem.draw(this.ctx);
-
         HUD.draw(this.ctx, this.player, this.levelSystem, this.canvas);
-
         if (this.state === 'LEVEL_UP') {
             UpgradeMenu.draw(this.ctx, this.canvas, this.levelSystem.availableUpgrades);
         }
-
-        if (this.state === 'GAME_OVER') {
-            this.drawGameOver();
-        }
+        if (this.state === 'GAME_OVER') this.drawGameOver();
     }
 
     drawGameOver() {
@@ -193,7 +147,5 @@ export class Game {
         this.ctx.textAlign = 'center';
         this.ctx.font = '40px Arial';
         this.ctx.fillText('VOCÊ MORREU', this.canvas.width / 2, this.canvas.height / 2);
-        this.ctx.font = '20px Arial';
-        this.ctx.fillText('Clique para tentar novamente', this.canvas.width / 2, this.canvas.height / 2 + 50);
     }
 }
