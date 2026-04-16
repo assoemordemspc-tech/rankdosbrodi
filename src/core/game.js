@@ -65,6 +65,7 @@ export class Game {
         this.handleAutoAttack(dt);
         this.xpSystem.update(this.player, (val) => this.levelSystem.addXP(val));
 
+        // Atualizar projéteis e remover se saírem da tela ou morrerem
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
             p.update();
@@ -73,14 +74,26 @@ export class Game {
             }
         }
 
+        // 🟥 Colisão INIMIGO -> PLAYER
         CollisionSystem.checkCircleCollision([this.player], this.spawnSystem.enemies, (player, enemy) => {
             player.takeDamage(10);
             if (player.health <= 0) this.state = 'GAME_OVER';
         });
 
+        // 🟢 Colisão PROJÉTIL -> INIMIGO (Com sistema de PIERCE)
         CollisionSystem.checkCircleCollision(this.projectiles, this.spawnSystem.enemies, (proj, enemy, pIdx, eIdx) => {
+            // Aplica dano ao inimigo
             enemy.takeDamage(proj.damage || 1);
-            this.projectiles.splice(pIdx, 1);
+            
+            // Diminui a capacidade de penetração do projétil
+            proj.pierce--;
+            
+            // Se o projétil gastou toda a penetração, removemos ele do array
+            if (proj.pierce <= 0) {
+                this.projectiles.splice(pIdx, 1);
+            }
+
+            // Se o inimigo morreu, gera XP e remove o inimigo
             if (enemy.health <= 0) {
                 this.xpSystem.spawn(enemy.x, enemy.y); 
                 this.spawnSystem.enemies.splice(eIdx, 1);
@@ -96,11 +109,8 @@ export class Game {
         }
     }
 
-    // --- NOVA LÓGICA DE MIRA AUTOMÁTICA ---
     getAngleToClosestEnemy() {
         const enemies = this.spawnSystem.enemies;
-        
-        // Se não houver inimigos, mantém a direção que o player está olhando
         if (enemies.length === 0) {
             return Math.atan2(this.player.lastDirection.y, this.player.lastDirection.x);
         }
@@ -115,15 +125,11 @@ export class Game {
                 closest = enemies[i];
             }
         }
-
-        // Retorna o ângulo em direção ao inimigo mais próximo
         return Math.atan2(closest.y - this.player.y, closest.x - this.player.x);
     }
 
     fireProjectiles() {
-        // Agora buscamos o ângulo do inimigo antes de disparar
         const baseAngle = this.getAngleToClosestEnemy();
-        
         this.shootingAngles.forEach(angleOffset => {
             const finalAngle = baseAngle + angleOffset;
             const p = new Projectile(this.player.x, this.player.y, finalAngle);
