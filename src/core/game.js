@@ -16,7 +16,7 @@ export class Game {
         
         this.projectiles = [];
         this.attackTimer = 0;
-        this.shootingAngles = [0]; // direção base
+        this.shootingAngles = [0]; // Direção base (0 radianos = Direita)
 
         this.state = 'PLAYING';
 
@@ -44,13 +44,13 @@ export class Game {
     }
 
     start() {
-    this.lastTime = performance.now();
-    requestAnimationFrame((time) => this.loop(time));
+        this.lastTime = performance.now();
+        requestAnimationFrame((time) => this.loop(time));
     }
 
     loop(timeStamp) {
-       const deltaTime = timeStamp - this.lastTime || 16;
-    this.lastTime = timeStamp;
+        const deltaTime = timeStamp - this.lastTime || 16;
+        this.lastTime = timeStamp;
 
         this.update(deltaTime);
         this.draw();
@@ -75,37 +75,34 @@ export class Game {
 
         this.xpSystem.update(this.player, (val) => this.levelSystem.addXP(val));
 
-        // Projéteis
+        // Atualizar e Limpar Projéteis
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
-    const p = this.projectiles[i];
-    p.update();
+            const p = this.projectiles[i];
+            p.update();
 
-    // Remove se sair da tela OU se o tempo de vida acabar
-    if (p.x < 0 || p.x > this.canvas.width || p.y < 0 || p.y > this.canvas.height || p.isDead()) {
-        this.projectiles.splice(i, 1);
+            if (p.x < 0 || p.x > this.canvas.width || p.y < 0 || p.y > this.canvas.height || p.isDead()) {
+                this.projectiles.splice(i, 1);
             }
         }
 
-        // 🟥 COLISÃO INIMIGO → PLAYER
+        // 🟥 COLISÃO INIMIGO -> PLAYER
         CollisionSystem.checkCircleCollision(
             [this.player],
             this.spawnSystem.enemies,
             (player, enemy) => {
                 player.takeDamage(10);
-
                 if (player.health <= 0) {
                     this.state = 'GAME_OVER';
                 }
             }
         );
 
-        // 🟢 COLISÃO PROJÉTIL → INIMIGO (DANO DINÂMICO)
+        // 🟢 COLISÃO PROJÉTIL -> INIMIGO
         CollisionSystem.checkCircleCollision(
             this.projectiles, 
             this.spawnSystem.enemies, 
             (proj, enemy, pIdx, eIdx) => {
                 enemy.takeDamage(proj.damage || 1);
-
                 this.projectiles.splice(pIdx, 1);
 
                 if (enemy.health <= 0) {
@@ -118,107 +115,52 @@ export class Game {
 
     handleAutoAttack(dt) {
         this.attackTimer += dt;
-    // Usamos o attackSpeed que está no Player agora
-    if (this.attackTimer >= this.player.attackSpeed) {
-        this.fireProjectiles();
-        this.attackTimer = 0;
+        if (this.attackTimer >= this.player.attackSpeed) {
+            this.fireProjectiles();
+            this.attackTimer = 0;
+        }
     }
-}
 
-fireProjectiles() {
-    // Para cada ângulo salvo no array, dispara um projétil
-    this.shootingAngles.forEach(angleOffset => {
-        // Calcula o ângulo base (para onde o player está olhando) 
-        // ou usa um ângulo fixo se preferir. 
-        // Vamos usar o ângulo da lastDirection do player:
+    fireProjectiles() {
+        // Calcula ângulo baseado na última direção de movimento do player
         const baseAngle = Math.atan2(this.player.lastDirection.y, this.player.lastDirection.x);
         
-        const finalAngle = baseAngle + angleOffset;
-
-        const p = new Projectile(this.player.x, this.player.y, finalAngle);
-        p.damage = this.player.attackDamage;
-        this.projectiles.push(p);
-    });
-}
-
-// --- FUNÇÕES DE SUPORTE PARA UPGRADES ---
-
-addProjectile(angle) {
-    // Adiciona uma nova direção permanente (ex: atirar para trás)
-    this.shootingAngles.push(angle);
-}
-
-setSpreadShot() {
-    // Transforma o tiro em 3 tiros em cone
-    this.shootingAngles = [-0.2, 0, 0.2];
-}
-
-setCircleShot() {
-    // Atira em 8 direções ao redor
-    this.shootingAngles = [];
-    for (let i = 0; i < 8; i++) {
-        this.shootingAngles.push((Math.PI * 2 / 8) * i);
-    }
-}
-
-setDoubleFront() {
-    // Dois tiros paralelos/próximos na frente
-    this.shootingAngles = [-0.05, 0.05];
-}
-
-    shootClosest() {
-        const enemies = this.spawnSystem.enemies;
-    if (enemies.length === 0) return;
-
-    const closest = enemies.reduce((prev, curr) => {
-        const dPrev = Math.hypot(this.player.x - prev.x, this.player.y - prev.y);
-        const dCurr = Math.hypot(this.player.x - curr.x, this.player.y - curr.y);
-        return dCurr < dPrev ? curr : prev;
-    });
-
-    const angle = Math.atan2(
-        closest.y - this.player.y,
-        closest.x - this.player.x
-    );
-
-    const p = new Projectile(
-        this.player.x,
-        this.player.y,
-        angle
-    );
-
-    p.damage = this.player.attackDamage;
-    this.projectiles.push(p);
+        this.shootingAngles.forEach(angleOffset => {
+            const finalAngle = baseAngle + angleOffset;
+            const p = new Projectile(this.player.x, this.player.y, finalAngle);
+            p.damage = this.player.attackDamage;
+            this.projectiles.push(p);
+        });
     }
 
-    // 🔫 TIRO FIXO
-    shootFixed() {
-        const p = new Projectile(
-            this.player.x,
-            this.player.y,
-            this.player.x + 100,
-            this.player.y
-        );
+    // --- MÉTODOS PARA UPGRADES ---
+    addProjectile(angle) {
+        this.shootingAngles.push(angle);
+    }
 
-        p.damage = this.player.attackDamage;
+    setSpreadShot() {
+        this.shootingAngles = [-0.2, 0, 0.2];
+    }
 
-        this.projectiles.push(p);
+    setCircleShot() {
+        this.shootingAngles = [];
+        for (let i = 0; i < 8; i++) {
+            this.shootingAngles.push((Math.PI * 2 / 8) * i);
+        }
+    }
+
+    setDoubleFront() {
+        this.shootingAngles = [-0.1, 0.1];
     }
 
     handleClick(e) {
         if (this.state === 'LEVEL_UP') {
-            const index = UpgradeMenu.getClickedOption(
-                e.clientX,
-                e.clientY,
-                this.canvas
-            );
-
+            const index = UpgradeMenu.getClickedOption(e.clientX, e.clientY, this.canvas);
             if (index !== null) {
                 this.levelSystem.applyUpgrade(index, this.player, this);
                 this.state = 'PLAYING';
             }
         }
-
         if (this.state === 'GAME_OVER') {
             location.reload();
         }
@@ -236,11 +178,7 @@ setDoubleFront() {
         HUD.draw(this.ctx, this.player, this.levelSystem, this.canvas);
 
         if (this.state === 'LEVEL_UP') {
-            UpgradeMenu.draw(
-                this.ctx,
-                this.canvas,
-                this.levelSystem.availableUpgrades
-            );
+            UpgradeMenu.draw(this.ctx, this.canvas, this.levelSystem.availableUpgrades);
         }
 
         if (this.state === 'GAME_OVER') {
@@ -251,17 +189,11 @@ setDoubleFront() {
     drawGameOver() {
         this.ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
         this.ctx.fillStyle = '#fff';
         this.ctx.textAlign = 'center';
         this.ctx.font = '40px Arial';
         this.ctx.fillText('VOCÊ MORREU', this.canvas.width / 2, this.canvas.height / 2);
-
         this.ctx.font = '20px Arial';
-        this.ctx.fillText(
-            'Clique para tentar novamente',
-            this.canvas.width / 2,
-            this.canvas.height / 2 + 50
-        );
+        this.ctx.fillText('Clique para tentar novamente', this.canvas.width / 2, this.canvas.height / 2 + 50);
     }
 }
