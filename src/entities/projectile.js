@@ -4,8 +4,8 @@ export class Projectile {
         this.y = y;
         this.size = 6;
 
-        this.speed = 7;
-        this.damage = 1;
+        this.speed = 10;
+        this.damage = 1.5;
 
         this.vx = Math.cos(angle) * this.speed;
         this.vy = Math.sin(angle) * this.speed;
