@@ -10,29 +10,58 @@ export class MagicWand extends Weapon {
             pierce: 1,
             projectileSpeed: 12
         });
+
+        this.shotCount = 1; // ✅ suporte a múltiplos tiros
     }
 
     fire(player, enemies, projectiles) {
-        // Lógica de busca do alvo mais próximo (encapsulada na arma!)
-        let closest = enemies[0];
-        let minDist = Math.hypot(player.x - closest.x, player.y - closest.y);
+        // 🛑 segurança (evita erro quando não há inimigos)
+        if (!enemies || enemies.length === 0) return;
 
-        for (let i = 1; i < enemies.length; i++) {
-            const dist = Math.hypot(player.x - enemies[i].x, player.y - enemies[i].y);
+        const target = this.getClosestEnemy(player, enemies);
+        if (!target) return;
+
+        const baseAngle = Math.atan2(
+            target.y - player.y,
+            target.x - player.x
+        );
+
+        // 🔫 múltiplos disparos
+        for (let i = 0; i < this.shotCount; i++) {
+
+            // 🎯 cálculo de spread centralizado
+            const offset = (i - (this.shotCount - 1) / 2) * 0.2;
+
+            const p = new Projectile(
+                player.x,
+                player.y,
+                baseAngle + offset
+            );
+
+            // aplica atributos da arma
+            p.damage = this.damage;
+            p.pierce = this.pierce;
+            p.speed = this.projectileSpeed;
+
+            projectiles.push(p);
+        }
+    }
+
+    // 🎯 busca otimizada do inimigo mais próximo
+    getClosestEnemy(player, enemies) {
+        let closest = null;
+        let minDist = Infinity;
+
+        for (let i = 0; i < enemies.length; i++) {
+            const e = enemies[i];
+            const dist = Math.hypot(player.x - e.x, player.y - e.y);
+
             if (dist < minDist) {
                 minDist = dist;
-                closest = enemies[i];
+                closest = e;
             }
         }
 
-        const angle = Math.atan2(closest.y - player.y, closest.x - player.x);
-        
-        // Cria o projétil usando os atributos desta arma
-        const p = new Projectile(player.x, player.y, angle);
-        p.damage = this.damage;
-        p.pierce = this.pierce;
-        p.speed = this.projectileSpeed;
-        
-        projectiles.push(p);
+        return closest;
     }
 }
