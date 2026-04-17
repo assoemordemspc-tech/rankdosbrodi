@@ -135,7 +135,7 @@ export class Game {
                 }
 
                 if (enemy.health <= 0) {
-                    this.xpSystem.spawn(enemy.x, enemy.y);
+                    this.xpSystem.spawn(enemy.x, enemy.y, enemy.xp);
                     this.spawnSystem.enemies.splice(eIdx, 1);
                 }
             }
