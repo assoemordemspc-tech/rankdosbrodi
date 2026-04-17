@@ -18,7 +18,7 @@ export class MagicWand extends Weapon {
     fire(player, enemies, projectiles) {
         // 🛑 segurança (evita erro quando não há inimigos)
         if (!enemies || enemies.length === 0) return;
-
+Sound.playShoot(); // 🔊 AQUI
         const target = this.getClosestEnemy(player, enemies);
         if (!target) return;
 
