@@ -129,6 +129,7 @@ export class Game {
             (proj, enemy, pIdx, eIdx) => {
 
                 enemy.takeDamage(proj.damage || 1);
+                Sound.playHit(); // 🔊 AQUI
                 proj.pierce--;
 
                 if (proj.pierce <= 0) {
