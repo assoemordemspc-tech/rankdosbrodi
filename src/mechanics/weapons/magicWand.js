@@ -1,3 +1,4 @@
+import { Sound } from '../../systems/audioSystem.js';
 import { Weapon } from '../weapon.js';
 import { Projectile } from '../../entities/projectile.js';
 
