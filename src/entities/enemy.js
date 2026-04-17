@@ -42,14 +42,45 @@ export class Enemy {
         this.velocity = config.speed;
         this.size = config.size;
         this.color = config.color;
-        this.xp = config.xp; // ✅ XP definido por tipo
+        this.xp = config.xp;
 
-        // 🔥 FUTURO: sistema de efeitos (burn, slow, poison etc)
+        // 🔥 efeitos
         this.effects = [];
+
+        // 💥 NOVO: feedback de dano
+        this.hitTimer = 0;
+        this.knockbackX = 0;
+        this.knockbackY = 0;
     }
 
-    // 🧠 movimento básico em direção ao player
+    // 💥 dano com knockback
+    takeDamage(amount, sourceAngle = 0) {
+        this.health -= amount;
+
+        // flash
+        this.hitTimer = 0.1;
+
+        // knockback
+        const power = 5;
+        this.knockbackX = Math.cos(sourceAngle) * power;
+        this.knockbackY = Math.sin(sourceAngle) * power;
+    }
+
     update(player, dt) {
+        // 💥 aplica knockback
+        this.x += this.knockbackX;
+        this.y += this.knockbackY;
+
+        // atrito do knockback
+        this.knockbackX *= 0.8;
+        this.knockbackY *= 0.8;
+
+        // ⏱ timer do flash
+        if (this.hitTimer > 0) {
+            this.hitTimer -= dt / 1000;
+        }
+
+        // 🧠 movimento normal
         const dx = player.x - this.x;
         const dy = player.y - this.y;
         const dist = Math.hypot(dx, dy);
@@ -62,7 +93,6 @@ export class Enemy {
         this.updateEffects(dt);
     }
 
-    // 🔥 sistema de status effects (base)
     updateEffects(dt) {
         for (let i = this.effects.length - 1; i >= 0; i--) {
             const effect = this.effects[i];
@@ -88,20 +118,24 @@ export class Enemy {
         });
     }
 
-    takeDamage(amount) {
-        this.health -= amount;
-    }
-
     isDead() {
         return this.health <= 0;
     }
 
     draw(ctx) {
-        ctx.fillStyle = this.color;
+        ctx.save();
 
+        // 💥 flash de dano
+        if (this.hitTimer > 0) {
+            ctx.filter = 'brightness(3) saturate(0)';
+        }
+
+        ctx.fillStyle = this.color;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
+
+        ctx.restore();
 
         // 🔴 barra de vida
         const hpRatio = this.health / this.maxHealth;
@@ -116,6 +150,8 @@ export class Enemy {
         if (this.type === 'suicide') {
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size + 1, 0, Math.PI * 2);
             ctx.stroke();
         }
 
