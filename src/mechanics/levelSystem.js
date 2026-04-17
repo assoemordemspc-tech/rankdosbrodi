@@ -28,15 +28,13 @@ export class LevelSystem {
 
     generateUpgrades() {
         const pool = [
-            { id: 'damage', name: 'Dano +10%' },
-            { id: 'attackSpeed', name: 'Ataque +15%' },
-            { id: 'moveSpeed', name: 'Velocidade +10%' },
+            { type: 'DAMAGE', name: 'Dano +1' },
+            { type: 'ATTACK_SPEED', name: 'Ataque +20%' },
+            { type: 'MOVE_SPEED', name: 'Velocidade +10%' },
 
-            // 🔥 GAMEPLAY REAL
-            { id: 'multiShot', name: '+1 Projétil' },
-            { id: 'spread', name: 'Tiro em Cone' },
-            { id: 'circle', name: 'Tiro 360°' },
-            { id: 'doubleShot', name: 'Tiro Duplo Frente' }
+            // 🔫 SISTEMA DE ARMAS NOVO
+            { type: 'DOUBLE_SHOT', name: 'Tiro Duplo' },
+            { type: 'MAGNET', name: 'Imã +50' }
         ];
 
         this.availableUpgrades = pool
@@ -48,21 +46,21 @@ export class LevelSystem {
         const upgrade = this.availableUpgrades[index];
         if (!upgrade) return;
 
-        switch (upgrade.id) {
+        switch (upgrade.type) {
 
             // =====================
             // 📊 STATS
             // =====================
 
-            case 'damage':
-                player.attackDamage *= 1.1;
+            case 'DAMAGE':
+                player.weapons.forEach(w => w.damage += 1);
                 break;
 
-            case 'attackSpeed':
-                player.attackSpeed *= 0.85;
+            case 'ATTACK_SPEED':
+                player.weapons.forEach(w => w.cooldown *= 0.8);
                 break;
 
-            case 'moveSpeed':
+            case 'MOVE_SPEED':
                 player.velocity *= 1.1;
                 break;
 
@@ -70,20 +68,14 @@ export class LevelSystem {
             // 🔫 ARMAS
             // =====================
 
-            case 'multiShot':
-                game.addProjectile(0);
+            case 'DOUBLE_SHOT':
+                player.weapons.forEach(w => {
+                    w.shotCount = (w.shotCount || 1) + 1;
+                });
                 break;
 
-            case 'spread':
-                game.setSpreadShot();
-                break;
-
-            case 'circle':
-                game.setCircleShot();
-                break;
-
-            case 'doubleShot':
-                game.setDoubleFront();
+            case 'MAGNET':
+                player.magnetRadius = (player.magnetRadius || 0) + 50;
                 break;
         }
 
