@@ -9,25 +9,29 @@ export class Enemy {
                 hp: 2,
                 speed: 1.2,
                 size: 15,
-                color: '#ff4444'
+                color: '#ff4444',
+                xp: 1
             },
             fast: {
                 hp: 1,
                 speed: 2.5,
                 size: 10,
-                color: '#ffff00'
+                color: '#ffff00',
+                xp: 2
             },
             tank: {
                 hp: 12,
                 speed: 0.6,
                 size: 25,
-                color: '#880000'
+                color: '#880000',
+                xp: 5
             },
             suicide: {
                 hp: 1,
                 speed: 3.0,
                 size: 12,
-                color: '#ff8800'
+                color: '#ff8800',
+                xp: 3
             }
         };
 
@@ -38,6 +42,7 @@ export class Enemy {
         this.velocity = config.speed;
         this.size = config.size;
         this.color = config.color;
+        this.xp = config.xp; // ✅ XP definido por tipo
 
         // 🔥 FUTURO: sistema de efeitos (burn, slow, poison etc)
         this.effects = [];
@@ -49,13 +54,11 @@ export class Enemy {
         const dy = player.y - this.y;
         const dist = Math.hypot(dx, dy);
 
-        // evita divisão por zero
         if (dist > 0) {
             this.x += (dx / dist) * this.velocity;
             this.y += (dy / dist) * this.velocity;
         }
 
-        // 🔥 processamento de efeitos ativos (DoT / debuff)
         this.updateEffects(dt);
     }
 
@@ -66,19 +69,16 @@ export class Enemy {
 
             effect.timer += dt;
 
-            // 🔥 BURN (dano ao longo do tempo)
             if (effect.type === 'burn') {
                 this.health -= (effect.dps * dt) / 1000;
             }
 
-            // ⏱ expiração do efeito
             if (effect.timer >= effect.duration) {
                 this.effects.splice(i, 1);
             }
         }
     }
 
-    // 🔥 aplica status effect
     applyEffect(type, data) {
         this.effects.push({
             type,
@@ -88,17 +88,14 @@ export class Enemy {
         });
     }
 
-    // 💥 dano direto
     takeDamage(amount) {
         this.health -= amount;
     }
 
-    // ☠️ verificação de morte
     isDead() {
         return this.health <= 0;
     }
 
-    // 🎨 renderização
     draw(ctx) {
         ctx.fillStyle = this.color;
 
@@ -106,7 +103,7 @@ export class Enemy {
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
 
-        // 🔴 barra de vida simples (feedback visual importante)
+        // 🔴 barra de vida
         const hpRatio = this.health / this.maxHealth;
 
         ctx.fillStyle = 'red';
@@ -115,14 +112,14 @@ export class Enemy {
         ctx.fillStyle = 'lime';
         ctx.fillRect(this.x - this.size, this.y - this.size - 8, this.size * 2 * hpRatio, 3);
 
-        // ⚠️ destaque visual do suicida
+        // ⚠️ destaque suicida
         if (this.type === 'suicide') {
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 2;
             ctx.stroke();
         }
 
-        // 🔥 efeito visual simples se estiver queimando
+        // 🔥 efeito burn
         if (this.effects.some(e => e.type === 'burn')) {
             ctx.strokeStyle = '#ff6600';
             ctx.lineWidth = 2;
