@@ -1,7 +1,19 @@
 // src/systems/xpSystem.js
 export class XPSystem {
     constructor() {
-        this.orbs = []; // Verifique se o nome é 'orbs' ou 'experienceOrbs' para bater com o resto do código
+        this.orbs = [];
+    }
+
+    // ✅ Método responsável por criar os cristais de XP
+    spawn(x, y, value = 1) {
+        this.orbs.push({
+            x: x,
+            y: y,
+            vx: 0,
+            vy: 0,
+            value: value,
+            size: 4
+        });
     }
 
     update(player, onCollect) {
@@ -31,13 +43,12 @@ export class XPSystem {
             }
         }
     }
-    
-    // Certifique-se de ter o método draw aqui também
+
     draw(ctx) {
         this.orbs.forEach(orb => {
             ctx.fillStyle = '#00ffff';
             ctx.beginPath();
-            ctx.arc(orb.x, orb.y, 4, 0, Math.PI * 2);
+            ctx.arc(orb.x, orb.y, orb.size || 4, 0, Math.PI * 2);
             ctx.fill();
         });
     }
