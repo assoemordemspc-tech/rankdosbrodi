@@ -96,7 +96,7 @@ export class SpawnSystem {
 
         // 🎯 aplicação de intensidade da wave (balanceamento global)
         enemy.health *= wave.intensity;
-        enemy.velocity *= wave.intensity;
+        enemy.velocity *= (1 + (wave.intensity - 1) * 0.2);
 
         this.enemies.push(enemy);
     }
