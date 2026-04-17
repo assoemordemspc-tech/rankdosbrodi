@@ -7,6 +7,7 @@ import { XPSystem } from '../systems/xpSystem.js';
 import { LevelSystem } from '../mechanics/levelSystem.js';
 import { HUD } from '../ui/hud.js';
 import { UpgradeMenu } from '../ui/upgradeMenu.js';
+import { Sound } from '../systems/audioSystem.js';
 
 export class Game {
     constructor() {
