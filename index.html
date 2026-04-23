@@ -1,13 +1,152 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Survival Roguelite</title>
-    <link rel="stylesheet" href="style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini MOBA</title>
+
+<style>
+body { margin:0; overflow:hidden; background:#111; }
+canvas { display:block; }
+</style>
 </head>
+
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <script type="module" src="main.js"></script> 
+<canvas id="game"></canvas>
+
+<script type="module">
+// ===== FIREBASE CONFIG (COLOQUE A SUA AQUI) =====
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCpUoutk0exFpw3C39myNwGtKLjJcOv41I",
+  authDomain: "noobmoba-708f5.firebaseapp.com",
+  projectId: "noobmoba-708f5",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ===== CANVAS =====
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// ===== PLAYER =====
+const playerId = Math.random().toString(36).substr(2, 9);
+
+let player = {
+  x: Math.random()*500+100,
+  y: Math.random()*300+100,
+  color: ["red","blue","green","yellow"][Math.floor(Math.random()*4)],
+  hp: 100
+};
+
+// ===== OUTROS JOGADORES =====
+let players = {};
+
+// ===== INPUT =====
+canvas.addEventListener("touchstart", move);
+canvas.addEventListener("click", move);
+
+function move(e){
+  let x = e.clientX || e.touches[0].clientX;
+  let y = e.clientY || e.touches[0].clientY;
+
+  player.x = x;
+  player.y = y;
+
+  updatePlayer();
+}
+
+// ===== ATUALIZA NO FIREBASE =====
+async function updatePlayer(){
+  await setDoc(doc(db, "players", playerId), player);
+}
+
+// ===== OUVIR OUTROS JOGADORES =====
+onSnapshot(collection(db, "players"), (snapshot)=>{
+  players = {};
+  snapshot.forEach(doc=>{
+    players[doc.id] = doc.data();
+  });
+});
+
+// ===== TIROS =====
+let bullets = [];
+
+canvas.addEventListener("dblclick", shoot);
+
+function shoot(e){
+  bullets.push({
+    x: player.x,
+    y: player.y,
+    dx: (Math.random()-0.5)*6,
+    dy: (Math.random()-0.5)*6
+  });
+}
+
+// ===== LOOP =====
+function update(){
+  bullets.forEach(b=>{
+    b.x += b.dx;
+    b.y += b.dy;
+  });
+}
+
+function draw(){
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // MAPA (simples)
+  ctx.fillStyle="#222";
+  ctx.fillRect(50,50,canvas.width-100,canvas.height-100);
+
+  // BASES
+  ctx.fillStyle="blue";
+  ctx.fillRect(60,canvas.height/2-30,20,60);
+
+  ctx.fillStyle="red";
+  ctx.fillRect(canvas.width-80,canvas.height/2-30,20,60);
+
+  // PLAYERS
+  for(let id in players){
+    let p = players[id];
+
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,10,0,Math.PI*2);
+    ctx.fill();
+
+    // FOG OF WAR
+    let grd = ctx.createRadialGradient(p.x,p.y,20,p.x,p.y,120);
+    grd.addColorStop(0,"rgba(0,0,0,0)");
+    grd.addColorStop(1,"rgba(0,0,0,0.9)");
+
+    ctx.fillStyle = grd;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+
+  // BULLETS
+  ctx.fillStyle="white";
+  bullets.forEach(b=>{
+    ctx.fillRect(b.x,b.y,4,4);
+  });
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+
+// PRIMEIRO UPDATE
+updatePlayer();
+
+</script>
 </body>
 </html>
